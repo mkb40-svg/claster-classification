@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лаборатория 8. Разметка последовательностей: HMM и алгоритм Витерби</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab07_sentiment.html">← Классификация текстов</a><a href="../index.html">☰ Все лаборатории</a><a href="lab09_ner.html">Распознавание именованных сущностей →</a></nav><h1>Лаборатория 8. Разметка последовательностей: HMM и алгоритм Витерби</h1><p class="mut">Часть речи слова зависит от соседей: «мыла» может быть существительным (родительный падеж «мыло») или глаголом. Скрытая марковская модель (HMM) выбирает не лучшие теги для каждого слова отдельно, а лучшую цепочку тегов целиком.</p>
+<div id="out"></div>
+<h2>Что происходит</h2><p>HMM задаётся двумя таблицами: <b>переходы</b> P(тег | предыдущий тег) и <b>эмиссии</b> P(слово | тег). Вероятность цепочки это произведение всех переходов и эмиссий. Перебрать все цепочки нельзя (их k<sup>n</sup>), поэтому <b>алгоритм Витерби</b> на каждом слове хранит для каждого тега лучшую цепочку, заканчивающуюся в нём, и запоминает, откуда пришёл («←»).</p><p>В таблице показаны эти максимальные вероятности по шагам. В конце по запомненным стрелкам идут от лучшего значения последнего слова назад и получают лучшую цепочку (зелёные ячейки). Справа для сравнения теги, выбранные для каждого слова отдельно по эмиссиям: именно на «мыла» они ошибаются, а Витерби исправляет ошибку, потому что за существительным чаще идёт глагол.</p><p>Параметры (вероятности) здесь заданы вручную для примера; в реальной задаче их оценивают подсчётом по размеченному корпусу.</p>
+<h2>Эксперименты</h2><ol><li>Выберите «мама мыла раму» и пройдите алгоритм по шагам. Какое значение получил тег ГЛ у слова «мыла»?</li><li>Дойдите до конца. Чем различаются теги Витерби и теги по отдельным словам?</li><li>Отключите переходы (равные). Что происходит с ответом на «мама мыла раму»?</li><li>Выберите «кот спит на диване». Какие переходы особенно важны?</li></ol>
+<h2>Вопросы для самопроверки</h2><ol><li>Почему перебор всех цепочек тегов неэффективен и как Витерби решает это динамическим программированием?</li><li>Чем HMM отличается от независимой классификации слов?</li><li>Какие ограничения HMM (например, зависимость только от предыдущего тега) преодолевают CRF и нейросетевые модели?</li></ol>
+<nav class="n"><a href="lab07_sentiment.html">← Классификация текстов</a><a href="../index.html">☰ Все лаборатории</a><a href="lab09_ner.html">Распознавание именованных сущностей →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"sents": ["мама мыла раму", "красная машина едет", "кот спит на диване"], "states": ["СУЩ", "ГЛ", "ПРИЛ", "ПРЕДЛ"], "start": {"СУЩ": 0.5, "ГЛ": 0.1, "ПРИЛ": 0.3, "ПРЕДЛ": 0.1}, "tr": {"СУЩ": {"СУЩ": 0.25, "ГЛ": 0.5, "ПРИЛ": 0.1, "ПРЕДЛ": 0.15}, "ГЛ": {"СУЩ": 0.45, "ГЛ": 0.1, "ПРИЛ": 0.15, "ПРЕДЛ": 0.3}, "ПРИЛ": {"СУЩ": 0.8, "ГЛ": 0.05, "ПРИЛ": 0.15, "ПРЕДЛ": 0.001}, "ПРЕДЛ": {"СУЩ": 0.6, "ГЛ": 0.001, "ПРИЛ": 0.4, "ПРЕДЛ": 0.001}}, "em": {"мама": {"СУЩ": 0.08}, "мыла": {"СУЩ": 0.04, "ГЛ": 0.03}, "раму": {"СУЩ": 0.05}, "красная": {"ПРИЛ": 0.07}, "машина": {"СУЩ": 0.08}, "едет": {"ГЛ": 0.08}, "кот": {"СУЩ": 0.07}, "спит": {"ГЛ": 0.08}, "на": {"ПРЕДЛ": 0.3}, "диване": {"СУЩ": 0.06}}, "next": "Шаг ▶", "all": "До конца", "reset": "Сначала", "stp": "Шаг", "back": "обратный проход", "trl": "Переходы", "on": "Учитывать", "off": "Равные (игнорировать)", "state": "Тег", "vit": "Витерби (лучшая цепочка)", "gre": "Каждое слово отдельно (по эмиссии)", "gnote": "Красным отмечены слова, где ответ отличается от Витерби."};
+
+let si=0,t=0,useT=true;const ST=S.states,K=ST.length;
+const E=(s,w)=>(S.em[w]&&S.em[w][ST[s]])||1e-4;
+const Tr=(a,b)=>useT?S.tr[ST[a]][ST[b]]:1/K;
+const St=s=>useT?S.start[ST[s]]:1/K;
+function run(ws){const n=ws.length,V=[],B=[];V[0]=ST.map((_,s)=>St(s)*E(s,ws[0]));B[0]=ST.map(()=>-1);
+ for(let i=1;i<n;i++){V[i]=[];B[i]=[];for(let s=0;s<K;s++){let best=-1,bv=-1;for(let a=0;a<K;a++){const v=V[i-1][a]*Tr(a,s);if(v>bv){bv=v;best=a}}V[i][s]=bv*E(s,ws[i]);B[i][s]=best}}
+ let last=V[n-1].indexOf(Math.max(...V[n-1]));const path=[last];for(let i=n-1;i>0;i--){last=B[i][last];path.unshift(last)}return{V,B,path}}
+const ex=v=>v>=0.01?v.toFixed(3):v.toExponential(1);
+function render(){const ws=S.sents[si].split(' '),n=ws.length,R=run(ws),done=t>=n,emis=ws.map((w,i)=>ST.map((_,s)=>E(s,w)).reduce((b,v,s,a)=>v>a[b]?s:b,0));
+ $('out').innerHTML=`<div class="card"><div class="row">${S.sents.map((x,i)=>btn('ss',i,esc(x),i==si)).join('')}</div>
+ <div class="row">${btn('pv',0,'◀')}${btn('nx',0,S.next)}${btn('al',0,S.all)}${btn('rs',0,S.reset)}<span class="mut">${S.stp}: ${Math.min(t,n)}/${n}${done?' ('+S.back+')':''}</span></div>
+ <div class="row"><span class="mut">${S.trl}:</span>${btn('tr',1,S.on,useT)}${btn('tr',0,S.off,!useT)}</div>
+ <div class="tw"><table><tr><th>${S.state}</th>${ws.map(w=>`<th class="c">${esc(w)}</th>`).join('')}</tr>
+ ${ST.map((s,k)=>`<tr><th>${esc(s)}</th>${ws.map((w,i)=>{if(i>=t)return'<td class="c mut">·</td>';const on=done&&R.path[i]==k;const bp=i?` <span class="mut">←${esc(ST[R.B[i][k]])}</span>`:'';return`<td class="c" style="background:${on?'rgba(18,145,95,.35)':'transparent'}">${ex(R.V[i][k])}${bp}</td>`}).join('')}</tr>`).join('')}</table></div></div>
+ ${done?`<div class="grid"><div class="card"><b>${S.vit}</b><p>${ws.map((w,i)=>`<span class="tag" style="border-color:var(--g)">${esc(w)}<br><b>${esc(ST[R.path[i]])}</b></span>`).join('')}</p></div>
+ <div class="card"><b>${S.gre}</b><p>${ws.map((w,i)=>`<span class="tag" style="border-color:${emis[i]==R.path[i]?'var(--bd)':'var(--r)'}">${esc(w)}<br><b>${esc(ST[emis[i]])}</b></span>`).join('')}</p><p class="mut">${S.gnote}</p></div></div>`:''}`}
+ACT.ss=v=>{si=+v;t=0;render()};ACT.nx=()=>{const n=S.sents[si].split(' ').length;if(t<n+1)t++;render()};ACT.pv=()=>{if(t>0)t--;render()};ACT.al=()=>{t=S.sents[si].split(' ').length+1;render()};ACT.rs=()=>{t=0;render()};ACT.tr=v=>{useT=+v==1;render()};
+render();
+
+</script></main></body></html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лаборатория 2. Очистка текста, нормализация и алгоритм BPE</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab01_context_typology.html">← Развитие NLP и типология</a><a href="../index.html">☰ Все лаборатории</a><a href="lab03_morph.html">Морфологический анализ и лемматизация →</a></nav><h1>Лаборатория 2. Очистка текста, нормализация и алгоритм BPE</h1><p class="mut">Прежде чем модель увидит текст, его нужно очистить и разбить на токены. Здесь вы сами управляете нормализацией, а затем по шагам обучаете BPE: алгоритм, который учится делить слова на частые подслова.</p>
+<div class="card" id="nrm"></div><div class="card"><b id="h2"></b><label><span id="mgl"></span>: <b id="mgv"></b><input type="range" id="sl" min="0" max="20" value="8" data-in="sl"></label><div class="row" id="ctl"></div><div id="bpe"></div></div>
+<h2>Что происходит</h2><p><b>Нормализация</b> приводит разные написания одного и того же к одному виду: регистр, пунктуация, числа, буква «ё». Каждое такое правило сокращает словарь, но может и стереть различия (например, «все» и «всё»), поэтому правила выбирают под задачу.</p><p><b>BPE (Byte Pair Encoding)</b> начинает с отдельных символов и на каждом шаге склеивает самую частую соседнюю пару. Частые куски («дом», «лес») быстро становятся единым токеном, а редкое слово разбивается на знакомые части. Так словарь остаётся небольшим, а неизвестных слов почти не бывает: на этом построены токенизаторы современных моделей.</p><p>Знак «_» в конце слова показывает его границу, чтобы «дом» и «дом» внутри слова «домик» были разными символами.</p>
+<h2>Эксперименты</h2><ol><li>Включайте и выключайте правила нормализации. Как меняется число слов и размер словаря? Какое правило сокращает словарь сильнее всего?</li><li>Нажмите «Шаг» несколько раз. Какие пары склеиваются первыми и почему?</li><li>Дойдите до конца и посмотрите на сегментацию слов «дом», «домам», «домик». Видны ли основа и окончание?</li><li>Введите незнакомое слово (например, «домовик») в поле токенизации. Как BPE его разбивает?</li></ol>
+<h2>Вопросы для самопроверки</h2><ol><li>Почему BPE почти не даёт неизвестных слов, а словарь целых слов даёт?</li><li>Какую информацию теряет приведение к нижнему регистру и когда это вредно?</li><li>Как размер словаря (число слияний) влияет на длину последовательности токенов?</li></ol>
+<nav class="n"><a href="lab01_context_typology.html">← Развитие NLP и типология</a><a href="../index.html">☰ Все лаборатории</a><a href="lab03_morph.html">Морфологический анализ и лемматизация →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"lang": "ru", "sample": "Ёжик нашёл 3 гриба в лесу! Грибы — вкусные, а ёж — колючий.", "tin": "домовик", "corpus": {"дом": 5, "дома": 3, "домам": 2, "домик": 2, "домой": 2, "дым": 3, "дымок": 2, "лес": 4, "леса": 3, "лесной": 2, "лесник": 2}, "h1": "Нормализация текста", "t_fix": "ё → е", "t_lower": "нижний регистр", "t_punct": "убрать пунктуацию", "t_num": "числа → &lt;NUM&gt;", "after": "Результат", "cnt": "Токенов", "uniq": "Уникальных", "h2": "Обучение BPE на мини-корпусе", "step": "Шаг", "play": "▶ Play", "all": "До конца", "reset": "Сначала", "mg": "слияний", "vs": "размер словаря", "word": "Слово", "freq": "Частота", "seg": "Сегментация", "top": "Самые частые пары", "ml": "Выполненные слияния", "tz": "Токенизация вашего слова обученным BPE", "tzn": "Оранжевым выделены склеенные символы. Слова, которых не было в корпусе, всё равно разбиваются на известные части."};
+
+const N={lower:1,punct:1,num:1,fix:1};let text=S.sample,ms=[],words=[],inp=S.tin;
+function norm(t){if(N.fix)t=S.lang=='ru'?t.replace(/ё/g,'е').replace(/Ё/g,'Е'):t.replace(/([oOgG])['ʼ‘’`´ʻ]/g,'$1ʻ');
+ if(N.lower)t=t.toLowerCase();if(N.num)t=t.replace(/\d+/g,'<NUM>');if(N.punct)t=t.replace(/[^\p{L}\p{N}\s<>]/gu,'').replace(/\s+/g,' ').trim();return t}
+const toks=t=>t.split(/\s+/).filter(Boolean);
+function init(){words=Object.entries(S.corpus).map(([w,f])=>({s:[...w,'_'],f}));ms=[]}
+function pairs(){const c={};words.forEach(w=>{for(let i=0;i<w.s.length-1;i++){const k=w.s[i]+'\u0001'+w.s[i+1];c[k]=(c[k]||0)+w.f}});return Object.entries(c).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1))}
+function mergeAll(s,a,b){const o=[];for(let i=0;i<s.length;i++){if(i<s.length-1&&s[i]==a&&s[i+1]==b){o.push(a+b);i++}else o.push(s[i])}return o}
+function step(){const p=pairs();if(!p.length)return false;const[a,b]=p[0][0].split('\u0001');words.forEach(w=>w.s=mergeAll(w.s,a,b));ms.push([a,b,p[0][1]]);return true}
+function apply(n){init();for(let i=0;i<n&&step();i++);}
+function tok(w){let s=[...w,'_'];ms.forEach(([a,b])=>s=mergeAll(s,a,b));return s}
+const chips=(s)=>s.map(x=>`<span class="tag" style="border-color:${x.length>1?'var(--o)':'var(--ac)'}">${esc(x)}</span>`).join('');
+function drawN(){const n=norm(text),t0=toks(text),t1=toks(n),v0=new Set(t0).size,v1=new Set(t1).size;
+ $('nrm').innerHTML=`<b>${S.h1}</b><div class="row">${['fix','lower','punct','num'].map(k=>btn('nm',k,S['t_'+k],N[k])).join('')}</div>
+ <textarea id="tx" rows="2" data-in="tx">${esc(text)}</textarea><p class="mut">${S.after}:</p><p class="big" style="word-break:break-word">${esc(n)}</p>
+ <p class="mut">${S.cnt}: ${t0.length} → ${t1.length}. ${S.uniq}: ${v0} → ${v1}.</p>`}
+function drawB(){const P=pairs().slice(0,6),mx=P.length?P[0][1]:1,vocab=new Set(words.flatMap(w=>w.s));
+ $('h2').textContent=S.h2;$('mgl').textContent=S.mg;$('mgv').textContent=ms.length;$('sl').value=ms.length;
+ $('ctl').innerHTML=btn('step',0,S.step)+btn('play',0,S.play)+btn('reset',0,S.reset)+`<span class="mut">${S.vs}: ${vocab.size}</span>`;
+ $('bpe').innerHTML=`<div class="grid"><div class="tw"><table><tr><th>${S.word}</th><th>${S.freq}</th><th>${S.seg}</th></tr>${words.map(w=>`<tr><td>${esc(w.s.join('').replace(/_$/,''))}</td><td class="c">${w.f}</td><td>${chips(w.s)}</td></tr>`).join('')}</table></div>
+ <div><p class="mut">${S.top}:</p>${P.map(([k,c])=>bar(esc(k.split('\u0001').join(' + ')),c/mx,c)).join('')||'—'}<p class="mut">${S.ml}: ${ms.map(m=>esc(m[0]+m[1])).join(', ')||'—'}</p></div></div>
+ <p><b>${S.tz}</b></p><input type="text" id="wi" value="${esc(inp)}" data-in="wi"><p id="tk"></p><p class="mut">${S.tzn}</p>`;drawT()}
+function drawT(){$('tk').innerHTML=chips(tok(inp.toLowerCase()))}
+ACT.nm=k=>{N[k]=!N[k];drawN()};ACT.tx=v=>{text=v;drawN();const t=$('tx');t.focus();t.setSelectionRange(v.length,v.length)};
+ACT.wi=v=>{inp=v;drawT()};ACT.sl=v=>{stop();apply(+v);drawB()};
+ACT.step=()=>{stop();apply(ms.length+1);drawB()};ACT.reset=()=>{stop();apply(0);drawB()};
+ACT.play=()=>loop(()=>{apply(ms.length+1);drawB();return ms.length<20},600);
+apply(8);drawN();drawB();
+
+</script></main></body></html>

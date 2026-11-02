@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лаборатория 5. Статическая векторизация: BoW, TF-IDF, Word2Vec, FastText</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab04_ngram.html">← N-граммные модели и сглаживание</a><a href="../index.html">☰ Все лаборатории</a><a href="lab06_attention.html">Механизм внимания и контекстные эмбеддинги →</a></nav><h1>Лаборатория 5. Статическая векторизация: BoW, TF-IDF, Word2Vec, FastText</h1><p class="mut">Чтобы модель работала со словами, их превращают в числа. Мешок слов и TF-IDF считают слова, Word2Vec учит плотные векторы, где близкие по смыслу слова оказываются рядом, а FastText добавляет к этому буквенные n-граммы, чтобы справляться с незнакомыми формами.</p>
+<div class="card"><b id="hA"></b><div id="A"></div></div><div class="card"><b id="hB"></b><div class="row"><button data-act="tr" data-v="10" id="b10"></button><button data-act="pl" data-v="0" id="bpl">▶</button><button data-act="rs" data-v="0" id="brs"></button></div><div class="grid"><canvas id="cB" style="aspect-ratio:1/.85"></canvas><div id="B"></div></div><div id="wc" class="row"></div></div><div class="card"><b id="hC"></b><div id="C"></div></div>
+<h2>Что происходит</h2><p><b>BoW</b> описывает документ счётчиками слов и не знает порядка. <b>TF-IDF</b> уменьшает вес слов, которые есть почти во всех документах («на»), и повышает вес редких, различающих документы. Поэтому сходство документов по TF-IDF точнее отражает общую тему.</p><p><b>Word2Vec (skip-gram)</b> учит вектор слова предсказывать соседние слова: слова из похожих контекстов получают похожие векторы. Здесь настоящее обучение на маленьком корпусе (проекция на плоскость выполнена методом главных компонент): нажимайте «Обучить» и смотрите, как слова собираются в группы по смыслу.</p><p><b>FastText</b> представляет слово суммой векторов его символьных n-грамм. Поэтому форма, которой не было в обучении («кошками»), получает вектор, близкий к известным формам того же слова. Для языков с богатой морфологией это особенно важно.</p>
+<h2>Эксперименты</h2><ol><li>Сравните матрицы сходства документов для BoW и TF-IDF. Какие пары документов стали ближе, а какие дальше?</li><li>Нажмите «Сброс» и обучайте по 10 эпох. Через сколько эпох слова одной темы собираются рядом?</li><li>Выберите слово «кошка» и посмотрите на ближайшие соседи. Кто оказался рядом и почему?</li><li>В блоке FastText введите «кошками» или «собаками». Какие слова модель считает ближайшими и почему найдены не только формы одного слова?</li></ol>
+<h2>Вопросы для самопроверки</h2><ol><li>Почему TF-IDF не различает «кошка ест мышку» и «мышка ест кошку»?</li><li>Чем Word2Vec отличается от BoW с точки зрения размерности и смысла векторов?</li><li>Почему FastText лучше Word2Vec для языков с богатой морфологией?</li></ol>
+<nav class="n"><a href="lab04_ngram.html">← N-граммные модели и сглаживание</a><a href="../index.html">☰ Все лаборатории</a><a href="lab06_attention.html">Механизм внимания и контекстные эмбеддинги →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"docs": ["кошка ловит мышку", "собака ловит мяч", "кошка спит на диване", "собака спит на коврике"], "sel0": "кошка", "bow": "Мешок слов (счётчики)", "tfidf": "TF-IDF", "docsn": "Косинусное сходство документов:", "corpus": ["кошка ест рыбу", "собака ест мясо", "кошка пьёт молоко", "собака пьёт воду", "кошка спит дома", "собака спит дома", "кошка любит рыбу", "собака любит мясо", "машина едет по дороге", "автобус едет по дороге", "поезд едет по рельсам", "машина стоит у дома", "автобус стоит у остановки", "поезд стоит у платформы", "суп варят в кастрюле", "рыбу жарят на сковороде", "мясо жарят на сковороде", "суп едят ложкой", "молоко пьют из стакана", "воду пьют из стакана"], "cats": {"кошка": 0, "собака": 0, "машина": 1, "автобус": 1, "поезд": 1, "суп": 2, "рыбу": 2, "мясо": 2, "молоко": 2, "воду": 2, "рыба": 2}, "epoch": "Эпох обучения", "nbr": "Ближайшие слова к", "tinC": "кошками", "vocC": ["кошка", "кошки", "кошку", "собака", "собаки", "собаку", "машина", "машины", "автобус", "поезд"], "nmax": "максимум n в n-грамме", "known": "Известные модели слова", "near": "Ближайшие известные слова по общим n-граммам", "hA": "1. Мешок слов и TF-IDF", "hB": "2. Word2Vec (skip-gram): обучение на мини-корпусе", "hC": "3. FastText: символьные n-граммы", "b10": "Обучить (10 эпох)", "brs": "Сброс"};
+
+// A: BoW / TF-IDF
+let tf=0,sel=S.sel0;const toks=s=>s.toLowerCase().split(/\s+/);
+const dtoks=S.docs.map(toks),voc=[...new Set(dtoks.flat())],N=dtoks.length,dfv=voc.map(w=>dtoks.filter(d=>d.includes(w)).length),idf=dfv.map(d=>Math.log((N+1)/(d+1))+1);
+function vecs(){return dtoks.map(d=>{let v=voc.map((w,i)=>d.filter(x=>x==w).length*(tf?idf[i]:1));if(tf){const n=Math.hypot(...v)||1;v=v.map(x=>x/n)}return v})}
+const cosv=(a,b)=>{const n=Math.hypot(...a)*Math.hypot(...b);return n?a.reduce((s,x,i)=>s+x*b[i],0)/n:0};
+function drawA(){const V=vecs();$('A').innerHTML=`<div class="row">${btn('tf',0,S.bow,!tf)}${btn('tf',1,S.tfidf,tf)}</div><div class="tw"><table><tr><th></th>${voc.map(w=>`<th class="c">${esc(w)}</th>`).join('')}</tr>
+ ${V.map((v,i)=>`<tr><th>d${i+1}</th>${v.map(x=>`<td class="c" style="background:rgba(43,125,233,${Math.min(1,x)*.6})">${tf?f2(x):x}</td>`).join('')}</tr>`).join('')}${tf?`<tr><th>idf</th>${idf.map(x=>`<td class="c">${f2(x)}</td>`).join('')}</tr>`:''}</table></div>
+ <p class="mut">${S.docsn}</p><div class="tw"><table><tr><th>cos</th>${V.map((_,i)=>`<th class="c">d${i+1}</th>`).join('')}</tr>${V.map((a,i)=>`<tr><th>d${i+1}</th>${V.map(b=>{const c=cosv(a,b);return`<td class="c" style="background:rgba(18,145,95,${c*.6})">${f2(c)}</td>`}).join('')}</tr>`).join('')}</table></div>`}
+ACT.tf=v=>{tf=+v;drawA()};
+// B: skip-gram negative sampling
+const D=8,sents=S.corpus.map(s=>s.split(' ')),W2=[...new Set(sents.flat())],ix={};W2.forEach((w,i)=>ix[w]=i);
+let E,Cc,ep=0,R=rng(7),pos=[];
+function initB(){R=rng(7);E=W2.map(()=>Array.from({length:D},()=>(R()-.5)/D));Cc=W2.map(()=>Array(D).fill(0));ep=0;proj()}
+function upd(a,b,y,lr){let s=0;for(let k=0;k<D;k++)s+=E[a][k]*Cc[b][k];const g=(1/(1+Math.exp(-s))-y)*lr;for(let k=0;k<D;k++){const da=g*Cc[b][k],db=g*E[a][k];E[a][k]-=da;Cc[b][k]-=db}}
+function epoch(){sents.forEach(t=>t.forEach((w,i)=>{for(let j=Math.max(0,i-2);j<=Math.min(t.length-1,i+2);j++){if(j==i)continue;upd(ix[w],ix[t[j]],1,.1);for(let n=0;n<3;n++){let r=Math.floor(R()*W2.length);if(r!=ix[t[j]])upd(ix[w],r,0,.1)}}}));ep++}
+function proj(){const n=W2.length,m=Array(D).fill(0);E.forEach(v=>v.forEach((x,k)=>m[k]+=x/n));const X=E.map(v=>v.map((x,k)=>x-m[k]));
+ const cov=Array.from({length:D},(_,a)=>Array.from({length:D},(_,b)=>X.reduce((s,v)=>s+v[a]*v[b],0)));let ev=[];
+ for(let c=0;c<2;c++){let v=Array.from({length:D},(_,i)=>Math.sin(i*3+c+1));for(let it=0;it<60;it++){let w=cov.map(r=>r.reduce((s,x,i)=>s+x*v[i],0));ev.forEach(e=>{const d=w.reduce((s,x,i)=>s+x*e[i],0);w=w.map((x,i)=>x-d*e[i])});const nn=Math.hypot(...w)||1;v=w.map(x=>x/nn)}ev.push(v)}
+ pos=X.map(v=>ev.map(e=>v.reduce((s,x,i)=>s+x*e[i],0)))}
+const cc=['var(--ac)','var(--o)','var(--g)','var(--mut)'];
+function nn(w){return W2.map((x,i)=>[x,cosv(E[ix[w]],E[i])]).filter(a=>a[0]!=w).sort((a,b)=>b[1]-a[1]).slice(0,4)}
+function drawB(){const[x,w,h]=cv('cB');const mx=Math.max(...pos.map(p=>Math.abs(p[0])),1e-6),my=Math.max(...pos.map(p=>Math.abs(p[1])),1e-6),X=p=>w/2+p[0]/mx*(w/2-34),Y=p=>h/2-p[1]/my*(h/2-14);
+ x.font='12px system-ui';pos.forEach((p,i)=>{const wd=W2[i],c=S.cats[wd]??3;x.fillStyle=col(['--ac','--o','--g','--mut'][c]);x.beginPath();x.arc(X(p),Y(p),wd==sel?6:4,0,7);x.fill();x.fillStyle=col('--fg');x.fillText(wd,X(p)+6,Y(p)+4)});
+ $('B').innerHTML=`<p class="mut">${S.epoch}: ${ep}</p><p>${S.nbr} <b>${esc(sel)}</b>:</p>${nn(sel).map(a=>bar(esc(a[0]),Math.max(0,a[1]),f2(a[1]))).join('')}`}
+function chipsB(){$('wc').innerHTML=W2.map(w=>btn('ws',w,esc(w),w==sel)).join('')}
+ACT.ws=v=>{sel=v;chipsB();drawB()};ACT.tr=v=>{stop();for(let i=0;i<+v;i++)epoch();proj();drawB()};ACT.pl=()=>loop(()=>{for(let i=0;i<5;i++)epoch();proj();drawB();return ep<400},150);ACT.rs=()=>{stop();initB();drawB()};
+// C: char n-grams
+let wd=S.tinC,nr=3;const kn=S.vocC;
+const grams=(w,lo,hi)=>{const t='<'+w+'>',o=new Set();for(let n=lo;n<=hi;n++)for(let i=0;i+n<=t.length;i++)o.add(t.slice(i,i+n));return o};
+function drawC(){const g=grams(wd.toLowerCase(),3,nr),sc=kn.map(k=>{const h=grams(k,3,nr);let i=0;g.forEach(x=>{if(h.has(x))i++});return[k,i/(g.size+h.size-i)]}).sort((a,b)=>b[1]-a[1]).slice(0,4);
+ $('C').innerHTML=`<div class="row"><input type="text" value="${esc(wd)}" data-in="wc2" style="max-width:260px"> <span class="mut">${S.nmax}:</span>${[3,4,5].map(n=>btn('nr',n,n,n==nr)).join('')}</div>
+ <p>${[...g].map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</p><p class="mut">${S.known}: ${kn.map(esc).join(', ')}</p><p><b>${S.near}</b></p>${sc.map(a=>bar(esc(a[0]),a[1],f2(a[1]))).join('')}`}
+ACT.wc2=v=>{wd=v;const p=v.length;drawC();const t=document.querySelector('#C input');t.focus();t.setSelectionRange(p,p)};ACT.nr=v=>{nr=+v;drawC()};
+$('hA').textContent=S.hA;$('hB').textContent=S.hB;$('hC').textContent=S.hC;$('b10').textContent=S.b10;$('brs').textContent=S.brs;initB();for(let i=0;i<60;i++)epoch();proj();drawA();chipsB();drawB();drawC();
+
+</script></main></body></html>

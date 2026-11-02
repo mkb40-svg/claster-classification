@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лаборатория 10. Синтаксический парсинг: деревья зависимостей и составляющих</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab09_ner.html">← Распознавание именованных сущностей</a><a href="../index.html">☰ Все лаборатории</a><a href="lab11_similarity.html">Сходство текстов →</a></nav><h1>Лаборатория 10. Синтаксический парсинг: деревья зависимостей и составляющих</h1><p class="mut">Синтаксический разбор показывает, как слова связаны в предложении. Есть два способа описания: дерево зависимостей (кто от кого зависит) и дерево составляющих (какие группы слов образуют вложенные фразы).</p>
+<div id="out"></div>
+<h2>Что происходит</h2><p><b>Дерево зависимостей</b> связывает слова стрелками «главное слово → зависимое» с типом связи: <i>nsubj</i> (подлежащее), <i>obj</i> (дополнение), <i>amod</i> (определение), <i>obl</i> (обстоятельство), <i>case</i> (предлог). У каждого слова ровно одна голова, у сказуемого это ROOT.</p><p>Таблица показывает работу <b>переходного парсера (arc-standard)</b>: у него стек и буфер, и он на каждом шаге выбирает действие: SH (перенести слово из буфера в стек), LA (левая дуга: слово под вершиной зависит от вершины), RA (правая дуга: вершина зависит от слова под ней). Здесь действия подсказывает эталонное дерево («оракул»), в настоящем парсере их выбирает обученная модель.</p><p><b>Дерево составляющих</b> группирует слова во вложенные фразы (NP именная группа, VP глагольная, PP предложная). Оба описания несут одну и ту же информацию по-разному и подходят для разных задач.</p>
+<h2>Эксперименты</h2><ol><li>Пройдите разбор «Мама мыла новую раму» по шагам. Когда создаётся дуга «новую ← раму»?</li><li>Сколько действий нужно для предложения из n слов? Проверьте на двух примерах.</li><li>Переключитесь на дерево составляющих. Какие группы слов образуют вложенные фразы?</li><li>Сравните оба предложения: как отличается положение сказуемого в дереве?</li></ol>
+<h2>Вопросы для самопроверки</h2><ol><li>Почему у каждого слова в дереве зависимостей ровно одна голова?</li><li>Что произойдёт, если оракул заменить моделью, ошибающейся на одном шаге?</li><li>В каких задачах (извлечение отношений, перевод) удобнее зависимости, а в каких составляющие?</li></ol>
+<nav class="n"><a href="lab09_ner.html">← Распознавание именованных сущностей</a><a href="../index.html">☰ Все лаборатории</a><a href="lab11_similarity.html">Сходство текстов →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"sents": [{"t": ["Мама", "мыла", "новую", "раму"], "h": [2, 0, 4, 2], "l": ["nsubj", "root", "amod", "obj"], "c": "(S (NP Мама) (VP мыла (NP новую раму)))"}, {"t": ["Студент", "читает", "интересную", "книгу", "в", "библиотеке"], "h": [2, 0, 4, 2, 6, 2], "l": ["nsubj", "root", "amod", "obj", "case", "obl"], "c": "(S (NP Студент) (VP читает (NP интересную книгу) (PP в библиотеке)))"}], "dep": "Дерево зависимостей", "con": "Дерево составляющих", "next": "Шаг ▶", "reset": "Сначала", "stp": "Шаг", "act": "Действие", "stack": "Стек", "buf": "Буфер", "note": "Синим выделены уже построенные дуги, серым дуги эталонного дерева, которые ещё предстоит построить.", "cnote": "Вложенные скобки преобразованы во вложенные блоки: чем глубже, тем мельче фраза."};
+
+let si=0,t=0,view='d';
+function oracle(it){const n=it.t.length,h=[0,...it.h];let st=[0],bf=[...Array(n).keys()].map(i=>i+1),att=new Set(),out=[],arcs=[];
+ const snap=(a)=>out.push({a,st:[...st],bf:[...bf],arcs:[...arcs]});snap('—');
+ const done=d=>h.every((x,i)=>i==0||x!=d||att.has(i));
+ while(bf.length||st.length>1){const s0=st[st.length-1],s1=st[st.length-2];let a;
+  if(st.length>1&&s1>0&&h[s1]==s0){a='LA';arcs.push([s0,s1]);att.add(s1);st.splice(st.length-2,1)}
+  else if(st.length>1&&h[s0]==s1&&done(s0)){a='RA';arcs.push([s1,s0]);att.add(s0);st.pop()}
+  else{a='SH';st.push(bf.shift())}snap(a);if(out.length>4*n+4)break}
+ return out}
+function arcsCanvas(it,arcs){const[x,w,h]=cv('cv'),n=it.t.length,X=i=>(i-.5)/n*w;x.font='15px system-ui';x.textAlign='center';
+ it.t.forEach((tk,i)=>{x.fillStyle=col('--fg');x.fillText(tk,X(i+1),h-12)});
+ it.h.forEach((hd,i)=>{const d=i+1,live=arcs.some(a=>a[0]==hd&&a[1]==d),x1=hd?X(hd):X(d),x2=X(d),H=hd?Math.min(18+Math.abs(x2-x1)*.2,95):80;
+  x.beginPath();x.strokeStyle=live?col('--ac'):col('--bd');x.lineWidth=live?2.4:1.2;x.moveTo(x1,h-28);x.quadraticCurveTo((x1+x2)/2,h-28-H*1.6,x2,h-28);x.stroke();
+  x.fillStyle=live?col('--ac'):col('--mut');x.beginPath();x.moveTo(x2,h-27);x.lineTo(x2-4,h-37);x.lineTo(x2+4,h-37);x.fill();
+  x.font='11px system-ui';x.fillText(it.l[i],(x1+x2)/2,h-28-H*.8-4);x.font='15px system-ui'});
+}
+function parseB(s){const tk=s.match(/\(|\)|[^\s()]+/g);let p=0;function node(){p++;const lab=tk[p++],ch=[];while(tk[p]!=')'){if(tk[p]=='(')ch.push(node());else ch.push(tk[p++])}p++;return{l:lab,c:ch}}return node()}
+const ren=n=>typeof n=='string'?`<span class="tag" style="border-color:var(--g)">${esc(n)}</span>`:`<div style="border-left:3px solid var(--ac);margin:4px 0 4px 6px;padding-left:8px"><b style="color:var(--ac)">${n.l}</b> ${n.c.map(ren).join('')}</div>`;
+function render(){const it=S.sents[si],O=oracle(it);if(t>=O.length)t=O.length-1;const cur=O[t];
+ $('out').innerHTML=`<div class="card"><div class="row">${S.sents.map((x,i)=>btn('ss',i,esc(x.t.join(' ')),i==si)).join('')}</div><div class="row">${btn('vw','d',S.dep,view=='d')}${btn('vw','c',S.con,view=='c')}</div>
+ ${view=='d'?`<canvas id="cv" style="height:200px"></canvas><div class="row">${btn('pv',0,'◀')}${btn('nx',0,S.next)}${btn('rs',0,S.reset)}<span class="mut">${S.stp}: ${t}/${O.length-1}</span></div>
+ <div class="tw"><table><tr><th>#</th><th>${S.act}</th><th>${S.stack}</th><th>${S.buf}</th></tr>${O.map((o,i)=>`<tr style="${i==t?'background:rgba(43,125,233,.18)':''}"><td>${i}</td><td>${o.a}</td><td>[${o.st.map(k=>k?esc(it.t[k-1]):'ROOT').join(', ')}]</td><td>[${o.bf.map(k=>esc(it.t[k-1])).join(', ')}]</td></tr>`).join('')}</table></div><p class="mut">${S.note}</p>`
+ :`<p class="mut">${S.cnote}</p>${ren(parseB(it.c))}`}</div>`;
+ if(view=='d')arcsCanvas(it,cur.arcs)}
+ACT.ss=v=>{si=+v;t=0;render()};ACT.vw=v=>{view=v;render()};ACT.nx=()=>{t++;render()};ACT.pv=()=>{if(t>0)t--;render()};ACT.rs=()=>{t=0;render()};addEventListener('resize',render);render();
+
+</script></main></body></html>

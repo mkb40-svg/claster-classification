@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лаборатория 13. Автоматическое реферирование: TextRank и абстрактивные методы</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab12_mt.html">← Машинный перевод</a><a href="../index.html">☰ Все лаборатории</a><a href="lab14_qa.html">Системы вопросов и ответов →</a></nav><h1>Лаборатория 13. Автоматическое реферирование: TextRank и абстрактивные методы</h1><p class="mut">Экстрактивное реферирование выбирает из текста самые важные предложения. TextRank делает это так же, как Google когда-то ранжировал страницы: предложение важно, если на него «ссылаются» другие важные предложения.</p>
+<div class="card"><div class="grid"><label><span id="dl"></span>: <b id="dv"></b><input type="range" min="50" max="95" step="5" value="85" data-in="d"></label><label><span id="il"></span>: <b id="iv"></b><input type="range" min="0" max="30" value="30" data-in="i"></label><label><span id="kl"></span>: <b id="kv"></b><input type="range" min="1" max="4" value="2" data-in="k"></label></div></div><div id="out"></div>
+<h2>Что происходит</h2><p>Каждое предложение это вершина графа, а вес ребра это сходство предложений (число общих основ слов, нормированное на длину). Слова приводятся к грубой основе (первые 5 букв), чтобы «выставка», «выставки» и «выставку» считались одним словом.</p><p><b>PageRank</b> раздаёт важность по рёбрам: на каждой итерации предложение получает долю важности от соседей, пропорциональную силе связи; <b>демпфирование</b> d задаёт долю «случайных прыжков». Крупные вершины это итоговые лидеры, из них собирается реферат в исходном порядке.</p><p><b>Абстрактивные</b> методы (нейросети) не выбирают предложения, а пишут новый текст, перефразируя и объединяя факты. Они могут выдать связный и короткий текст, но и «выдумать» неверные детали (галлюцинации), поэтому качество проверяют отдельно.</p>
+<h2>Эксперименты</h2><ol><li>Сдвиньте ползунок «Итерации» от 0 до 30. Как меняются размеры вершин?</li><li>Какое предложение получило самую низкую важность? Почему (посмотрите на его связи)?</li><li>Меняйте число предложений в реферате. Совпадает ли выбор TextRank с первыми предложениями (Lead)?</li><li>Уменьшите демпфирование до 0.5. Становятся ли оценки более равными?</li></ol>
+<h2>Вопросы для самопроверки</h2><ol><li>Почему предложение, не связанное по словам с остальными (S7), получает низкую оценку?</li><li>Чем TextRank отличается от выбора первых предложений?</li><li>Какие риски у абстрактивного реферирования по сравнению с экстрактивным?</li></ol>
+<nav class="n"><a href="lab12_mt.html">← Машинный перевод</a><a href="../index.html">☰ Все лаборатории</a><a href="lab14_qa.html">Системы вопросов и ответов →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"text": ["В Ташкенте открылась новая выставка современной живописи.", "Выставка объединила работы тридцати художников из разных стран.", "Организаторы отметили, что выставка современной живописи привлекла много посетителей.", "Художники представили картины, посвящённые городу и его жителям.", "Посетители особенно выделили работы молодых художников.", "Выставка продлится до конца месяца, вход для студентов бесплатный.", "Погода в городе в эти дни остаётся тёплой и солнечной."], "dl": "Демпфирование d", "il": "Итерации PageRank", "kl": "Предложений в реферате", "h1": "Важность предложений (PageRank)", "ext": "Экстрактивный реферат (TextRank)", "lead": "Базовый вариант: первые предложения (Lead)", "abs": "Абстрактивный реферат (пример, написан человеком)", "absx": "В Ташкенте открылась выставка современной живописи тридцати художников, которая продлится до конца месяца.", "absn": "Здесь показан пример абстрактивного результата: предложения перефразированы и объединены, чего экстрактивный метод сделать не может."};
+
+let d=.85,iters=30,k=2;
+const sents=S.text,tok=s=>(s.toLowerCase().match(/[\p{L}ʻ]+/gu)||[]).filter(w=>w.length>=3).map(w=>w.slice(0,5)),T=sents.map(s=>new Set(tok(s))),n=sents.length;
+const W=sents.map((_,i)=>sents.map((_,j)=>{if(i==j)return 0;let c=0;T[i].forEach(w=>{if(T[j].has(w))c++});return c/(Math.log(T[i].size+1)+Math.log(T[j].size+1))}));
+function pr(m){let r=Array(n).fill(1/n);for(let t=0;t<m;t++){r=r.map((_,i)=>(1-d)/n+d*r.reduce((s,rj,j)=>{const o=W[j].reduce((a,b)=>a+b,0);return s+(o?W[j][i]/o*rj:0)},0))}return r}
+function render(){const r=pr(iters),mx=Math.max(...r),top=[...r.keys()].sort((a,b)=>r[b]-r[a]).slice(0,k).sort((a,b)=>a-b);
+ $('dv').textContent=d;$('iv').textContent=iters;$('kv').textContent=k;
+ $('out').innerHTML=`<div class="grid"><div class="card"><canvas id="g" style="aspect-ratio:1/1"></canvas></div><div class="card"><b>${S.h1}</b>${sents.map((s,i)=>`<div style="margin:6px 0;font-size:.92rem"><b style="color:${top.includes(i)?'var(--g)':'var(--mut)'}">S${i+1}</b> ${esc(s)}${bar('',r[i]/mx,f3(r[i]),top.includes(i)?'var(--g)':'var(--mut)')}</div>`).join('')}</div></div>
+ <div class="grid"><div class="card"><b>${S.ext}</b><p>${top.map(i=>esc(sents[i])).join(' ')}</p></div><div class="card"><b>${S.lead}</b><p>${sents.slice(0,k).map(esc).join(' ')}</p></div></div>
+ <div class="card"><b>${S.abs}</b><p>${esc(S.absx)}</p><p class="mut">${S.absn}</p></div>`;
+ const[x,w,h]=cv('g'),R=Math.min(w,h)/2-34,P=i=>[w/2+R*Math.cos(i/n*6.283-1.57),h/2+R*Math.sin(i/n*6.283-1.57)];
+ for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){if(W[i][j]<=0)continue;const a=P(i),b=P(j);x.strokeStyle=col('--ac');x.globalAlpha=Math.min(.85,.12+W[i][j]*.9);x.lineWidth=1+W[i][j]*4;x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke()}x.globalAlpha=1;
+ for(let i=0;i<n;i++){const p=P(i),rad=10+22*r[i]/mx;x.beginPath();x.arc(p[0],p[1],rad,0,7);x.fillStyle=top.includes(i)?col('--g'):col('--mut');x.fill();x.fillStyle='#fff';x.font='bold 13px system-ui';x.textAlign='center';x.fillText('S'+(i+1),p[0],p[1]+4)}}
+$('dl').textContent=S.dl;$('il').textContent=S.il;$('kl').textContent=S.kl;ACT.d=v=>{d=+v/100;render()};ACT.i=v=>{iters=+v;render()};ACT.k=v=>{k=+v;render()};addEventListener('resize',render);render();
+
+</script></main></body></html>

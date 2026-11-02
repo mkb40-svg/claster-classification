@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лаборатория 11. Сходство текстов: косинус, Jaccard и расстояние Левенштейна</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab10_parsing.html">← Синтаксический парсинг</a><a href="../index.html">☰ Все лаборатории</a><a href="lab12_mt.html">Машинный перевод →</a></nav><h1>Лаборатория 11. Сходство текстов: косинус, Jaccard и расстояние Левенштейна</h1><p class="mut">Чтобы искать дубликаты, исправлять опечатки или группировать тексты, нужно число, измеряющее похожесть двух строк. Разные меры «видят» разное: одни чувствительны к порядку букв, другие только к составу.</p>
+<div id="out"></div>
+<h2>Что происходит</h2><p><b>Расстояние Левенштейна</b> это минимальное число вставок, удалений и замен символов, превращающих одну строку в другую. Оно считается динамическим программированием по таблице: каждая клетка берёт минимум из трёх соседних. Зелёный путь показывает лучшую цепочку правок.</p><p><b>Jaccard</b> сравнивает <i>множества</i> (слов или символьных n-грамм): размер пересечения делится на размер объединения. <b>Косинус</b> сравнивает векторы счётчиков n-грамм и учитывает, сколько раз элемент встречается. Обе меры не знают порядка слов: «мама мыла раму» и «раму мыла мама» для них одинаковы, а у Левенштейна между ними большое расстояние.</p><p>Выбор меры зависит от задачи: опечатки лучше ловит Левенштейн, одинаковый состав слов Jaccard, тематическую близость длинных текстов косинус.</p>
+<h2>Эксперименты</h2><ol><li>Выберите «корова / кровать». Какое расстояние Левенштейна и почему у слов с разным смыслом так много общих букв?</li><li>Выберите «мама мыла раму / раму мыла мама». Сравните три меры. Почему они дают разный ответ?</li><li>Переключайте гранулярность (слова, 2-граммы, 3-граммы). Как меняются Jaccard и косинус для коротких слов?</li><li>Нажмите «Заполнить по шагам» и проследите, откуда берётся значение каждой клетки.</li></ol>
+<h2>Вопросы для самопроверки</h2><ol><li>Почему расстояние Левенштейна нельзя применять к «смыслу» предложений?</li><li>В чём разница между Jaccard на множествах и косинусом на счётчиках?</li><li>Как сравнивать длинные тексты быстро, если расстояние Левенштейна считается за O(m·n)?</li></ol>
+<nav class="n"><a href="lab10_parsing.html">← Синтаксический парсинг</a><a href="../index.html">☰ Все лаборатории</a><a href="lab12_mt.html">Машинный перевод →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"pre": [["кошка", "кошки"], ["корова", "кровать"], ["мама мыла раму", "раму мыла мама"], ["привет мир", "приветствие мира"]], "gran": "Единицы сравнения", "gw": "слова", "g2": "2-граммы символов", "g3": "3-граммы символов", "h1": "Расстояние Левенштейна", "norm": "сходство 1 − d/max", "ops": {"=": "совпадение", "~": "замена", "-": "удаление", "+": "вставка"}, "h2": "Меры сходства (1 = одинаковые)", "lvs": "Левенштейн (нормированный)", "inter": "Общих", "uni": "всего различных", "h3": "Таблица динамического программирования", "fill": "Заполнить по шагам", "fnote": "Зелёным выделен путь лучших правок."};
+
+let A=S.pre[0][0],B=S.pre[0][1],gr='3',rv=1e9,pl=false;
+function lev(a,b){const x=[...a],y=[...b],m=x.length,n=y.length,D=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i==0?j:j==0?i:0));
+ for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)D[i][j]=Math.min(D[i-1][j]+1,D[i][j-1]+1,D[i-1][j-1]+(x[i-1]==y[j-1]?0:1));
+ let i=m,j=n;const path=new Set([i+','+j]),ops=[];
+ while(i>0||j>0){if(i>0&&j>0&&D[i][j]==D[i-1][j-1]+(x[i-1]==y[j-1]?0:1)){ops.unshift(x[i-1]==y[j-1]?['=',x[i-1],y[j-1]]:['~',x[i-1],y[j-1]]);i--;j--}else if(i>0&&D[i][j]==D[i-1][j]+1){ops.unshift(['-',x[i-1],'']);i--}else{ops.unshift(['+','',y[j-1]]);j--}path.add(i+','+j)}
+ return{D,x,y,path,ops}}
+function gr_(s){s=s.toLowerCase();if(gr=='w')return s.match(/[\p{L}\p{N}ʻ]+/gu)||[];const n=+gr,o=[];const t=s.replace(/\s+/g,' ');for(let i=0;i+n<=t.length;i++)o.push(t.slice(i,i+n));return o}
+function render(){const L=lev(A,B),ga=gr_(A),gb=gr_(B),sa=new Set(ga),sb=new Set(gb),inter=[...sa].filter(x=>sb.has(x)),uni=new Set([...sa,...sb]),jac=uni.size?inter.length/uni.size:0;
+ const cn=g=>{const c={};g.forEach(x=>c[x]=(c[x]||0)+1);return c},ca=cn(ga),cb=cn(gb),keys=[...uni],dot=keys.reduce((s,k)=>s+(ca[k]||0)*(cb[k]||0),0),na=Math.hypot(...keys.map(k=>ca[k]||0)),nb=Math.hypot(...keys.map(k=>cb[k]||0)),cs=na&&nb?dot/(na*nb):0;
+ const m=Math.max(L.x.length,L.y.length,1),lv=L.D[L.x.length][L.y.length];
+ $('out').innerHTML=`<div class="card"><div class="row">${S.pre.map((p,i)=>btn('pr',i,esc(p[0])+' / '+esc(p[1]),p[0]==A&&p[1]==B)).join('')}</div>
+ <div class="grid"><div><label>A</label><input type="text" id="ia" value="${esc(A)}" data-in="ia"></div><div><label>B</label><input type="text" id="ib" value="${esc(B)}" data-in="ib"></div></div>
+ <div class="row"><span class="mut">${S.gran}:</span>${btn('gr','w',S.gw,gr=='w')}${btn('gr','2',S.g2,gr=='2')}${btn('gr','3',S.g3,gr=='3')}</div></div>
+ <div class="grid"><div class="card"><b>${S.h1}</b><p class="big">${lv} <span class="mut" style="font-size:.9rem">(${S.norm}: ${f2(1-lv/m)})</span></p>
+ <p>${L.ops.map(o=>`<span class="tag" style="border-color:${o[0]=='='?'var(--g)':o[0]=='~'?'var(--o)':'var(--r)'}">${o[0]=='+'?'∅':esc(o[1])}→${o[0]=='-'?'∅':esc(o[2])}<br><span class="mut">${S.ops[o[0]]}</span></span>`).join('')}</p></div>
+ <div class="card"><b>${S.h2}</b>${bar('Jaccard',jac,f2(jac),'var(--ac)')}${bar('cosine',cs,f2(cs),'var(--g)')}${bar(S.lvs,1-lv/m,f2(1-lv/m),'var(--o)')}<p class="mut">${S.inter}: ${inter.length}, ${S.uni}: ${uni.size}</p></div></div>
+ <div class="card"><b>${S.h3}</b><div class="row"><button data-act="rv" data-v="0">${S.fill}</button><span class="mut">${S.fnote}</span></div><div class="tw"><table><tr><th></th><th></th>${L.y.map(c=>`<th class="c">${esc(c)}</th>`).join('')}</tr>
+ ${L.D.map((r,i)=>`<tr><th>${i?esc(L.x[i-1]):''}</th>${r.map((v,j)=>{const k=i*r.length+j,on=L.path.has(i+','+j);return`<td class="c" style="${on?'background:rgba(18,145,95,.35);font-weight:700':''}">${k<rv?v:''}</td>`}).join('')}</tr>`).join('')}</table></div></div>`}
+function keep(id,v){const p=v.length;render();const t=$(id);t.focus();t.setSelectionRange(p,p)}
+ACT.ia=v=>{A=v;rv=1e9;keep('ia',v)};ACT.ib=v=>{B=v;rv=1e9;keep('ib',v)};ACT.pr=v=>{[A,B]=S.pre[+v];rv=1e9;render()};ACT.gr=v=>{gr=v;render()};
+ACT.rv=()=>{rv=0;render();loop(()=>{rv+=2;render();return rv<(A.length+1)*(B.length+1)+2},120)};render();
+
+</script></main></body></html>
