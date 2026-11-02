@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>9-laboratoriya. Nomlangan obyektlarni aniqlash: BIO belgilash va CRF</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab08_hmm.html">← Ketma-ketliklarni belgilash</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab10_parsing.html">Sintaktik tahlil →</a></nav><h1>9-laboratoriya. Nomlangan obyektlarni aniqlash: BIO belgilash va CRF</h1><p class="mut">NER matndan shaxs ismlari, joylar, tashkilotlarni topadi. Masala har bir soʻzni BIO tegi bilan belgilashga keladi: B (obyekt boshi), I (davomi), O (obyektdan tashqari). Bu yerda nima uchun chiziqli zanjir (CRF) har bir soʻzni mustaqil belgilashdan ishonchliroq ekani koʻrinadi.</p>
+<div id="out"></div>
+<h2>Nima sodir boʻlmoqda</h2><p>Har bir soʻz uchun belgilar hisoblanadi (bosh harf bilan, ismlar lugʻatida bor, shahar nomiga oʻxshaydi), tegning emissiya bahosi esa belgilar ogʻirliklari yigʻindisi. Uzbek tilida shahar nomiga qoʻshimchalar qoʻshiladi (Toshkent, Toshkentga, Toshkentda), shuning uchun lugʻat oʻxshashlik boʻyicha (soʻz boshi) tekshiriladi.</p><p><b>CRF</b> soʻzlar baholariga qoʻshni teglar orasidagi <b>oʻtish baholarini</b> qoʻshadi: «I-PER» «O» dan keyin kela olmaydi, «B-PER → I-PER» rag'batlantiriladi. Eng yaxshi zanjir yana Viterbi algoritmi bilan topiladi. «Karimov» familiyasi hech qayerda yozilmagan, lekin model uni I-PER deb aniqlaydi, chunki u ismdan keyin turadi.</p><p>NER sifati alohida teglar boʻyicha emas, <b>obyektlar boʻyicha toʻliq</b> (spanlar F1) oʻlchanadi: obyekt toʻliq topilmasa, toʻgʻri teglar ulushi yuqori boʻlsa ham xato hisoblanadi.</p>
+<h2>Tajribalar</h2><ol><li>«Ali Karimov Toshkentga keldi» ni tanlang va mustaqil belgilash bilan CRF ni solishtiring. Qaysi soʻzda farq qiladi?</li><li>CRF da oʻtishlarni oʻchiring. Javob mustaqil belgilash bilan mos tushadimi?</li><li>«Ali Yangi Toshkentda yashaydi» ni tanlang. CRF ikki soʻzli nomni qanday bitta obyektga birlashtiradi?</li><li>Mustaqil belgilashda teglar boʻyicha aniqlik va obyektlar boʻyicha F1 ni solishtiring. Nima uchun ular bunchalik farq qiladi?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Nima uchun «O» dan keyingi «I-PER» yaroqsiz belgilash hisoblanadi va CRF buni qanday hisobga oladi?</li><li>Obyektlar boʻyicha F1 tokenlar boʻyicha aniqlikdan nimasi bilan qattiqroq?</li><li>Qaysi belgilar (qoʻshimchalar, atrof, registr) lugʻatda yoʻq ismlarni aniqlashga yordam beradi?</li></ol>
+<nav class="n"><a href="lab08_hmm.html">← Ketma-ketliklarni belgilash</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab10_parsing.html">Sintaktik tahlil →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"gaz": {"per": ["Ali", "Madina", "Dilshod"], "loc": ["Toshkent", "Samarqand", "Buxoro", "Yangi"], "prep": []}, "sents": [{"t": "Ali Karimov Toshkentga keldi", "g": "B-PER I-PER B-LOC O"}, {"t": "Madina Samarqandda oʻqiydi", "g": "B-PER B-LOC O"}, {"t": "Dilshod Valiyev Buxoroda yashaydi", "g": "B-PER I-PER B-LOC O"}, {"t": "Ali Yangi Toshkentda yashaydi", "g": "B-PER B-LOC I-LOC O"}], "gold": "Etalon belgilash", "h1": "Har bir soʻz uchun teg baholari (belgilar boʻyicha)", "tag": "Teg", "ind": "Mustaqil belgilash (oʻtishlarsiz)", "crf": "CRF (oʻtish baholari bilan Viterbi)", "on": "Oʻtishlar yoqilgan", "off": "Oʻtishlar oʻchirilgan", "ents": "Topilgan obyektlar (CRF)", "tokacc": "token aniqligi", "entf1": "obyektlar F1", "inv": "yaroqsiz BIO"};
+
+const TG=['O','B-PER','I-PER','B-LOC','I-LOC'];let si=0,useT=true;
+const Wt={'O':[1,-1.2,.2,-1.5,-1.5,0],'B-PER':[-1.4,1.5,0,2.5,-1.5,0],'I-PER':[-1.7,1.5,0,.5,-1.5,0],'B-LOC':[-1.5,1.2,0,-1,3,.8],'I-LOC':[-2.5,.8,0,-1,2.5,.3]};
+const FN=['bias','cap','first','name','loc','prep'];
+function feats(ws,i){const w=ws[i];return[1,i>0&&/^\p{Lu}/u.test(w)?1:0,i==0?1:0,S.gaz.per.includes(w)?1:0,S.gaz.loc.some(s=>w.startsWith(s))?1:0,i>0&&S.gaz.prep.includes(ws[i-1].toLowerCase())?1:0]}
+const em=(ws,i,t)=>feats(ws,i).reduce((a,f,k)=>a+f*Wt[TG[t]][k],0);
+function tr(a,b){const A=a<0?'S':TG[a],B=TG[b];let v=0;
+ if(B.startsWith('I-')){const ty=B.slice(2);if(A=='S'||A=='O'||A.slice(2)!=ty)return-10;v+=A.startsWith('B')?1.5:.5}
+ if(A=='O'&&B=='O')v+=.3;if(A.startsWith('B-')&&B.startsWith('B-')&&A==B)v-=1;return v}
+function vit(ws){const n=ws.length,K=TG.length,V=[],P=[];V[0]=TG.map((_,t)=>em(ws,0,t)+(useT?tr(-1,t):0));
+ for(let i=1;i<n;i++){V[i]=[];P[i]=[];for(let b=0;b<K;b++){let bv=-1e9,bp=0;for(let a=0;a<K;a++){const v=V[i-1][a]+(useT?tr(a,b):0);if(v>bv){bv=v;bp=a}}V[i][b]=bv+em(ws,i,b);P[i][b]=bp}}
+ let l=V[n-1].indexOf(Math.max(...V[n-1])),p=[l];for(let i=n-1;i>0;i--){l=P[i][l];p.unshift(l)}return p.map(i=>TG[i])}
+function spans(tg){const o=[];let c=null;tg.forEach((t,i)=>{if(t=='O'){if(c)o.push(c);c=null}else{const ty=t.slice(2);if(t[0]=='B'||!c||c[0]!=ty){if(c)o.push(c);c=[ty,i,i]}else c[2]=i}});if(c)o.push(c);return o}
+const key=s=>s.join(':');
+function f1(pr,go){const A=new Set(spans(pr).map(key)),B=new Set(spans(go).map(key));let tp=0;A.forEach(x=>{if(B.has(x))tp++});const p=A.size?tp/A.size:0,r=B.size?tp/B.size:0;return{p,r,f:p+r?2*p*r/(p+r):0}}
+const valid=tg=>tg.every((t,i)=>!t.startsWith('I-')||(i>0&&tg[i-1]!='O'&&tg[i-1].slice(2)==t.slice(2)));
+function render(){const it=S.sents[si],ws=it.t.split(' '),gold=it.g.split(' '),ind=ws.map((_,i)=>TG[[0,1,2,3,4].reduce((b,t)=>em(ws,i,t)>em(ws,i,b)?t:b,0)]),crf=vit(ws);
+ const show=(tg,ref)=>tg.map((t,i)=>`<span class="tag" style="border-color:${t==ref[i]?'var(--g)':'var(--r)'}">${esc(ws[i])}<br><b>${t}</b></span>`).join('');
+ const m=(tg)=>{const x=f1(tg,gold),acc=tg.filter((t,i)=>t==gold[i]).length/tg.length;return`<p class="mut">${S.tokacc}: ${(acc*100).toFixed(0)}%, ${S.entf1}: <b>${f2(x.f)}</b> (P ${f2(x.p)}, R ${f2(x.r)}) ${valid(tg)?'':'<b class="bad">'+S.inv+'</b>'}</p>`};
+ $('out').innerHTML=`<div class="card"><div class="row">${S.sents.map((x,i)=>btn('ss',i,esc(x.t),i==si)).join('')}</div><p class="mut">${S.gold}:</p><p>${ws.map((w,i)=>`<span class="tag">${esc(w)}<br><b>${gold[i]}</b></span>`).join('')}</p></div>
+ <div class="tw card"><b>${S.h1}</b><table><tr><th>${S.tag}</th>${ws.map(w=>`<th class="c">${esc(w)}</th>`).join('')}</tr>${TG.map((t,k)=>`<tr><th>${t}</th>${ws.map((_,i)=>{const v=em(ws,i,k);return`<td class="c" style="background:rgba(${v>0?'18,145,95':'214,51,108'},${Math.min(.5,Math.abs(v)/6)})">${f2(v)}</td>`}).join('')}</tr>`).join('')}</table></div>
+ <div class="grid"><div class="card"><b>${S.ind}</b><p>${show(ind,gold)}</p>${m(ind)}</div><div class="card"><b>${S.crf}</b><div class="row">${btn('tr',1,S.on,useT)}${btn('tr',0,S.off,!useT)}</div><p>${show(crf,gold)}</p>${m(crf)}</div></div>
+ <div class="card"><b>${S.ents}</b><p>${spans(crf).map(s=>`<span class="tag" style="border-color:var(--ac)">${esc(ws.slice(s[1],s[2]+1).join(' '))} <b>${s[0]}</b></span>`).join('')||'—'}</p></div>`}
+ACT.ss=v=>{si=+v;render()};ACT.tr=v=>{useT=+v==1;render()};render();
+
+</script></main></body></html>

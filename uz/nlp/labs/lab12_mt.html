@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>12-laboratoriya. Mashina tarjimasi: soʻzlarni moslashtirish va Beam Search</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab11_similarity.html">← Matnlar oʻxshashligi</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab13_summary.html">Avtomatik referatlash →</a></nav><h1>12-laboratoriya. Mashina tarjimasi: soʻzlarni moslashtirish va Beam Search</h1><p class="mut">Statistik tarjima ikki savolga tayanadi: original soʻzlari tarjima soʻzlariga qanday mos keladi (moslashtirish) va koʻp variantdan qaysi iborani tanlash (qidiruv). Bu yerda ikkala bosqich oʻyinchoq misollarda koʻrsatilgan.</p>
+<div class="card"><b id="hA"></b><div class="row" id="cA"></div><div id="A"></div></div><div class="card"><b id="hB"></b><div class="grid"><label><span id="kl"></span>: <b id="kv"></b><input type="range" min="1" max="4" value="1" data-in="bk"></label><label><span id="al"></span>: <b id="av"></b><input type="range" min="0" max="10" value="0" data-in="ba"></label></div><div id="B"></div></div>
+<h2>Nima sodir boʻlmoqda</h2><p><b>Moslashtirish (IBM Model 1)</b> parallel gaplardan belgilashsiz oʻrganadi. EM algoritmi tarjima ehtimollari t(e|f) ni teng qilib boshlaydi va ikki qadamni takrorlaydi: soʻzlar bir-biriga qanday mos kelishini baholaydi va ehtimollarni shu baholar boʻyicha qayta hisoblaydi. Turli kontekstlarda uchraydigan soʻzlar («ona» «oʻqiydi» va «yozadi» bilan) tez ajraladi.</p><p>Oʻzbek tilida soʻz tartibi (ega – toʻldiruvchi – kesim) inglizcha (ega – kesim – toʻldiruvchi) dan farq qiladi, shuning uchun moslashtirish chiziqlari kesishadi: bu mashina tarjimasining asosiy qiyinchiliklaridan biri.</p><p><b>Beam search</b> tarjimani soʻzma-soʻz quradi. Ochkoʻz qidiruv (kenglik 1) har qadamda eng ehtimolli soʻzni tanlaydi va boshi berk koʻchaga kirishi mumkin. Nur boʻyicha qidiruv k ta eng yaxshi variantni saqlaydi va ehtimoli yuqoriroq gapni topadi. Uzunlik normallashtirilmasa, gap ehtimoli har bir soʻz bilan kamayadi va qidiruv qisqa variantlarni afzal koʻradi.</p>
+<h2>Tajribalar</h2><ol><li>«Qadam» ni bir marta, soʻng yana 10 marta bosing. t(e|f) jadvali qanday oʻzgaradi? «ona» soʻziga qaysi soʻz mos keladi?</li><li>Turli gaplarni tanlang va moslashtirish chiziqlariga qarang. Barcha juftliklar toʻgʻri moslashganmi? Chiziqlar qayerda kesishadi?</li><li>Nur kengligini 1, soʻng 2 qiling. Topilgan gap va uning ehtimoli qanday oʻzgaradi?</li><li>Uzunlik normallashtirishni yoqing. Qidiruv endi uzunroq iboralarni afzal koʻradimi?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Nima uchun EM belgilashsiz soʻzlar mosligini oʻrgana oladi?</li><li>Nima uchun ochkoʻz qidiruv eng yaxshi gapni oʻtkazib yuborishi mumkin?</li><li>Nur kengligi tarjima sifati va tezligiga qanday taʼsir qiladi?</li></ol>
+<nav class="n"><a href="lab11_similarity.html">← Matnlar oʻxshashligi</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab13_summary.html">Avtomatik referatlash →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"pairs": [["ona kitob oʻqiydi", "mother reads book"], ["ota gazeta oʻqiydi", "father reads newspaper"], ["ona xat yozadi", "mother writes letter"], ["ota kitob yozadi", "father writes book"]], "lm": {"<s>": {"mushuk": 0.6, "it": 0.4}, "mushuk": {"derazada": 0.4, "uxlaydi": 0.3, "<\/s>": 0.3}, "it": {"uxlaydi": 0.9, "<\/s>": 0.1}, "derazada": {"oʻtiradi": 0.6, "<\/s>": 0.4}, "uxlaydi": {"<\/s>": 0.7, "derazada": 0.3}, "oʻtiradi": {"<\/s>": 1}}, "hA": "1. Soʻzlarni moslashtirish: EM algoritmi (IBM Model 1)", "step": "1 EM iteratsiyasi", "step10": "10 iteratsiya", "reset": "Boshidan", "iter": "Iteratsiyalar", "anote": "Tarjima ehtimoli yuqori boʻlsa, chiziq qalinroq.", "hB": "2. Oʻzbek tilining mini-modelida Beam Search", "kl": "Nur kengligi k", "al": "Uzunlik normallashtirish α", "st": "Qadam", "best": "Eng yaxshisi", "greedy": "Ochkoʻz qidiruv (k=1)"};
+
+// A: IBM Model 1
+const P=S.pairs.map(p=>[p[0].split(' '),p[1].split(' ')]),F=[...new Set(P.flatMap(p=>p[0]))],Eg=[...new Set(P.flatMap(p=>p[1]))];
+let tp,it=0,pi=0;
+function initA(){tp={};F.forEach(f=>{tp[f]={};Eg.forEach(e=>tp[f][e]=1/Eg.length)});it=0}
+function em(){const c={},tot={};F.forEach(f=>{c[f]={};Eg.forEach(e=>c[f][e]=0);tot[f]=0});
+ P.forEach(([fs,es])=>es.forEach(e=>{const z=fs.reduce((s,f)=>s+tp[f][e],0);fs.forEach(f=>{const d=tp[f][e]/z;c[f][e]+=d;tot[f]+=d})}));
+ F.forEach(f=>Eg.forEach(e=>tp[f][e]=c[f][e]/tot[f]));it++}
+function drawA(){const[fs,es]=P[pi];const al=es.map(e=>fs.reduce((b,f,i)=>tp[f][e]>tp[fs[b]][e]?i:b,0));
+ $('cA').innerHTML=btn('em',1,S.step)+btn('em',10,S.step10)+btn('rA',0,S.reset)+`<span class="mut">${S.iter}: ${it}</span>`;
+ $('A').innerHTML=`<div class="tw"><table><tr><th>t(e|f)</th>${Eg.map(e=>`<th class="c">${esc(e)}</th>`).join('')}</tr>${F.map(f=>`<tr><th>${esc(f)}</th>${Eg.map(e=>`<td class="c" style="background:rgba(43,125,233,${tp[f][e]*.9})">${f2(tp[f][e])}</td>`).join('')}</tr>`).join('')}</table></div>
+ <div class="row">${P.map((p,i)=>btn('pp',i,esc(p[0].join(' ')),i==pi)).join('')}</div><canvas id="cvA" style="height:130px"></canvas><p class="mut">${S.anote}</p>`;
+ const[x,w,h]=cv('cvA'),X=(i,n)=>(i+.5)/n*w;x.font='15px system-ui';x.textAlign='center';
+ fs.forEach((f,i)=>{x.fillStyle=col('--fg');x.fillText(f,X(i,fs.length),18)});es.forEach((e,j)=>{x.fillStyle=col('--fg');x.fillText(e,X(j,es.length),h-8);const i=al[j];x.strokeStyle=col('--ac');x.lineWidth=1+3*tp[fs[i]][e];x.beginPath();x.moveTo(X(i,fs.length),26);x.lineTo(X(j,es.length),h-26);x.stroke()})}
+ACT.em=v=>{stop();for(let i=0;i<+v;i++)em();drawA()};ACT.rA=()=>{initA();drawA()};ACT.pp=v=>{pi=+v;drawA()};
+// B: beam search
+let K=1,AL=0;const lm=S.lm;
+const sc=(h)=>{const L=h.w.length-1;return h.lp/Math.pow(Math.max(L,1),AL)};
+function beam(k){let act=[{w:['<s>'],lp:0}],fin=[],steps=[];
+ for(let t=0;t<7&&act.length;t++){const c=[];act.forEach(b=>{const l=b.w[b.w.length-1];Object.entries(lm[l]||{}).forEach(([w,p])=>c.push({w:[...b.w,w],lp:b.lp+Math.log(p)}))});
+  c.sort((a,b)=>sc(b)-sc(a));const top=c.slice(0,k),done=top.filter(h=>h.w[h.w.length-1]=='</s>');fin.push(...done);act=top.filter(h=>h.w[h.w.length-1]!='</s>');steps.push({top,done:done.length})}
+ fin.sort((a,b)=>sc(b)-sc(a));return{steps,best:fin[0]}}
+const txt=h=>h.w.slice(1).filter(x=>x!='</s>').join(' ');
+function drawB(){$('kv').textContent=K;$('av').textContent=(AL/10).toFixed(1);const R=beam(K),G=beam(1);
+ $('B').innerHTML=`<div class="grid">${R.steps.map((s,i)=>`<div class="card"><b>${S.st} ${i+1}</b>${s.top.map(h=>`<div style="font-size:.9rem;color:${h.w.at(-1)=='</s>'?'var(--g)':'var(--fg)'}">${esc(txt(h))||'…'}${h.w.at(-1)=='</s>'?' ✓':''} <span class="mut">p=${Math.exp(h.lp).toFixed(3)}</span></div>`).join('')}</div>`).join('')}</div>
+ <p>${S.best}: <b>${esc(txt(R.best))}</b> <span class="mut">(p=${Math.exp(R.best.lp).toFixed(3)})</span></p><p class="mut">${S.greedy}: ${esc(txt(G.best))} (p=${Math.exp(G.best.lp).toFixed(3)})</p>`}
+ACT.bk=v=>{K=+v;drawB()};ACT.ba=v=>{AL=+v/10;drawB()};
+$('hA').textContent=S.hA;$('hB').textContent=S.hB;$('kl').textContent=S.kl;$('al').textContent=S.al;initA();for(let i=0;i<1;i++);drawA();drawB();addEventListener('resize',drawA);
+
+</script></main></body></html>

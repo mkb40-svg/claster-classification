@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>8-laboratoriya. Ketma-ketliklarni belgilash: HMM va Viterbi algoritmi</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab07_sentiment.html">← Matnni tasniflash</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab09_ner.html">Nomlangan obyektlarni aniqlash →</a></nav><h1>8-laboratoriya. Ketma-ketliklarni belgilash: HMM va Viterbi algoritmi</h1><p class="mut">Soʻzning turkumi qoʻshnilariga bogʻliq: «yoz» ot (fasl) ham, feʼl (yozmoq) ham boʻlishi mumkin. Yashirin Markov modeli (HMM) har bir soʻz uchun alohida eng yaxshi teglarni emas, balki teglarning butun eng yaxshi zanjirini tanlaydi.</p>
+<div id="out"></div>
+<h2>Nima sodir boʻlmoqda</h2><p>HMM ikkita jadval bilan beriladi: <b>oʻtishlar</b> P(teg | oldingi teg) va <b>emissiyalar</b> P(soʻz | teg). Zanjir ehtimoli barcha oʻtish va emissiyalar koʻpaytmasi. Barcha zanjirlarni sanab chiqib boʻlmaydi (k<sup>n</sup> ta), shuning uchun <b>Viterbi algoritmi</b> har bir soʻzda har bir teg uchun unda tugaydigan eng yaxshi zanjirni saqlaydi va qayerdan kelganini eslab qoladi («←»).</p><p>Jadvalda bu maksimal ehtimollar bosqichma-bosqich koʻrsatilgan. Oxirida eslab qolingan strelkalar boʻyicha oxirgi soʻzning eng yaxshi qiymatidan orqaga yurib eng yaxshi zanjir olinadi (yashil kataklar). Oʻngda solishtirish uchun har bir soʻz alohida emissiya boʻyicha tanlangan teglar: aynan «yoz» da xato qiladi, Viterbi esa xatoni tuzatadi, chunki gap boshida ot feʼldan koʻproq uchraydi va undan keyin feʼl keladi.</p><p>Parametrlar (ehtimollar) bu yerda misol uchun qoʻlda berilgan; haqiqiy masalada ular belgilangan korpusda sanash orqali baholanadi.</p>
+<h2>Tajribalar</h2><ol><li>«yoz keldi» ni tanlang va algoritmni bosqichma-bosqich bajaring. «yoz» soʻzi uchun qaysi teg yetakchilik qiladi?</li><li>Oxirigacha boring. Viterbi teglari soʻzlar alohida tanlangan teglardan nimasi bilan farq qiladi?</li><li>Oʻtishlarni oʻchiring (teng). «yoz keldi» javobi nima boʻladi?</li><li>«men kitob oʻqidim» ni tanlang. Qaysi oʻtishlar ayniqsa muhim?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Nima uchun barcha teg zanjirlarini sanab chiqish samarasiz va Viterbi buni dinamik dasturlash bilan qanday hal qiladi?</li><li>HMM soʻzlarni mustaqil tasniflashdan nimasi bilan farq qiladi?</li><li>HMM ning qaysi cheklovlarini (faqat oldingi tegga bogʻliqlik) CRF va neyron modellar yengadi?</li></ol>
+<nav class="n"><a href="lab07_sentiment.html">← Matnni tasniflash</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab09_ner.html">Nomlangan obyektlarni aniqlash →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"sents": ["yoz keldi", "men kitob oʻqidim", "chiroyli qiz kuladi", "ona non yopdi"], "states": ["OT", "FEʼL", "SIFAT", "OLMOSH"], "start": {"OT": 0.35, "FEʼL": 0.1, "SIFAT": 0.25, "OLMOSH": 0.3}, "tr": {"OT": {"OT": 0.3, "FEʼL": 0.6, "SIFAT": 0.05, "OLMOSH": 0.05}, "FEʼL": {"OT": 0.3, "FEʼL": 0.3, "SIFAT": 0.2, "OLMOSH": 0.2}, "SIFAT": {"OT": 0.85, "FEʼL": 0.05, "SIFAT": 0.1, "OLMOSH": 0.001}, "OLMOSH": {"OT": 0.5, "FEʼL": 0.3, "SIFAT": 0.2, "OLMOSH": 0.001}}, "em": {"yoz": {"OT": 0.04, "FEʼL": 0.05}, "keldi": {"FEʼL": 0.06}, "men": {"OLMOSH": 0.1}, "kitob": {"OT": 0.06}, "oʻqidim": {"FEʼL": 0.05}, "chiroyli": {"SIFAT": 0.06}, "qiz": {"OT": 0.05}, "kuladi": {"FEʼL": 0.05}, "ona": {"OT": 0.06}, "non": {"OT": 0.05}, "yopdi": {"FEʼL": 0.05}}, "next": "Qadam ▶", "all": "Oxirigacha", "reset": "Boshidan", "stp": "Qadam", "back": "orqaga yurish", "trl": "Oʻtishlar", "on": "Hisobga olish", "off": "Teng (eʼtiborsiz)", "state": "Teg", "vit": "Viterbi (eng yaxshi zanjir)", "gre": "Har bir soʻz alohida (emissiya boʻyicha)", "gnote": "Qizil rang Viterbi dan farq qiladigan soʻzlarni bildiradi."};
+
+let si=0,t=0,useT=true;const ST=S.states,K=ST.length;
+const E=(s,w)=>(S.em[w]&&S.em[w][ST[s]])||1e-4;
+const Tr=(a,b)=>useT?S.tr[ST[a]][ST[b]]:1/K;
+const St=s=>useT?S.start[ST[s]]:1/K;
+function run(ws){const n=ws.length,V=[],B=[];V[0]=ST.map((_,s)=>St(s)*E(s,ws[0]));B[0]=ST.map(()=>-1);
+ for(let i=1;i<n;i++){V[i]=[];B[i]=[];for(let s=0;s<K;s++){let best=-1,bv=-1;for(let a=0;a<K;a++){const v=V[i-1][a]*Tr(a,s);if(v>bv){bv=v;best=a}}V[i][s]=bv*E(s,ws[i]);B[i][s]=best}}
+ let last=V[n-1].indexOf(Math.max(...V[n-1]));const path=[last];for(let i=n-1;i>0;i--){last=B[i][last];path.unshift(last)}return{V,B,path}}
+const ex=v=>v>=0.01?v.toFixed(3):v.toExponential(1);
+function render(){const ws=S.sents[si].split(' '),n=ws.length,R=run(ws),done=t>=n,emis=ws.map((w,i)=>ST.map((_,s)=>E(s,w)).reduce((b,v,s,a)=>v>a[b]?s:b,0));
+ $('out').innerHTML=`<div class="card"><div class="row">${S.sents.map((x,i)=>btn('ss',i,esc(x),i==si)).join('')}</div>
+ <div class="row">${btn('pv',0,'◀')}${btn('nx',0,S.next)}${btn('al',0,S.all)}${btn('rs',0,S.reset)}<span class="mut">${S.stp}: ${Math.min(t,n)}/${n}${done?' ('+S.back+')':''}</span></div>
+ <div class="row"><span class="mut">${S.trl}:</span>${btn('tr',1,S.on,useT)}${btn('tr',0,S.off,!useT)}</div>
+ <div class="tw"><table><tr><th>${S.state}</th>${ws.map(w=>`<th class="c">${esc(w)}</th>`).join('')}</tr>
+ ${ST.map((s,k)=>`<tr><th>${esc(s)}</th>${ws.map((w,i)=>{if(i>=t)return'<td class="c mut">·</td>';const on=done&&R.path[i]==k;const bp=i?` <span class="mut">←${esc(ST[R.B[i][k]])}</span>`:'';return`<td class="c" style="background:${on?'rgba(18,145,95,.35)':'transparent'}">${ex(R.V[i][k])}${bp}</td>`}).join('')}</tr>`).join('')}</table></div></div>
+ ${done?`<div class="grid"><div class="card"><b>${S.vit}</b><p>${ws.map((w,i)=>`<span class="tag" style="border-color:var(--g)">${esc(w)}<br><b>${esc(ST[R.path[i]])}</b></span>`).join('')}</p></div>
+ <div class="card"><b>${S.gre}</b><p>${ws.map((w,i)=>`<span class="tag" style="border-color:${emis[i]==R.path[i]?'var(--bd)':'var(--r)'}">${esc(w)}<br><b>${esc(ST[emis[i]])}</b></span>`).join('')}</p><p class="mut">${S.gnote}</p></div></div>`:''}`}
+ACT.ss=v=>{si=+v;t=0;render()};ACT.nx=()=>{const n=S.sents[si].split(' ').length;if(t<n+1)t++;render()};ACT.pv=()=>{if(t>0)t--;render()};ACT.al=()=>{t=S.sents[si].split(' ').length+1;render()};ACT.rs=()=>{t=0;render()};ACT.tr=v=>{useT=+v==1;render()};
+render();
+
+</script></main></body></html>

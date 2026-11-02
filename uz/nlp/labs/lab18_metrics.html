@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>18-laboratoriya. Sifat metrikalari: BLEU, ROUGE va F1</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab17_stress.html">← Agglyutinativ tillar morfologiyasida NLP</a><a href="../index.html">☰ Barcha laboratoriyalar</a><span></span></nav><h1>18-laboratoriya. Sifat metrikalari: BLEU, ROUGE va F1</h1><p class="mut">Tarjima, referat yoki model javobini avtomatik qanday baholash mumkin? Etalon bilan solishtirish orqali. Bu metrikalar soʻz va iboralar mosligini sanaydi va ular aynan nimani oʻlchashi, nimani koʻrmasligini tushunish muhim.</p>
+<div id="out"></div>
+<h2>Nima sodir boʻlmoqda</h2><p><b>BLEU</b> nomzodning n-grammalar aniqligini (n 1 dan 4 gacha) etalonlarga nisbatan hisoblaydi: har bir n-gramma etalonda uchraganidan koʻp hisoblanmaydi (kesish, clipping), shuning uchun «mushuk mushuk mushuk» takrori ball bermaydi. <b>BP</b> qisqalik jarimasi juda qisqa tarjimalarni jazolaydi. Natija aniqliklarning geometrik oʻrtachasi koʻpaytirilgan BP; biror aniqlik nolga teng boʻlsa, BLEU nolga aylanadi, shuning uchun qisqa gaplarda yumshatish qoʻllanadi.</p><p><b>ROUGE</b> «teskari tomondan» ishlaydi: <b>toʻliqlikni</b> (etalonning qancha ulushi nomzod bilan qoplangan) hisoblaydi va shuning uchun referatlar uchun tipik. ROUGE-N n-grammalar mosligi, ROUGE-L eng uzun umumiy qism ketma-ketlik (soʻzlar tartibini hisobga oladi). <b>F1</b> aniqlik va toʻliqlikning garmonik oʻrtachasi, tasniflash, NER, QA da ishlatiladi; F2 toʻliqlikka koʻproq ogʻirlik beradi.</p><p>Oʻzbek tilida shakl koʻpligi bu metrikalarga qoʻshimcha taʼsir qiladi: «kitob» va «kitobni» ular uchun turli soʻzlar, shuning uchun mos kelmaslik koʻproq boʻladi. Bunday tillarda baholashdan oldin soʻzlarni qismlarga boʻlish (BPE) yoki harf n-grammalaridan foydalanish (chrF) tavsiya etiladi. Barcha metrikalar sirtqi: ular sinonimlar va qayta ifodalashni bilmaydi, shuning uchun inson baholashi bilan toʻldiriladi.</p>
+<h2>Tajribalar</h2><ol><li>Joylashuvi oʻzgargan nomzodni tanlang (xuddi shu soʻzlar boshqa tartibda). BLEU, ROUGE-1 va ROUGE-L ga nima boʻladi?</li><li>«mushuk mushuk mushuk…» takror nomzodini tanlang. Nima uchun 1-gramma aniqligi 1 ga teng emas?</li><li>Qisqa nomzodda yumshatishni oʻchiring. Nima uchun BLEU nolga teng boʻladi?</li><li>Ikkinchi etalon qoʻshing. BLEU qanday oʻzgaradi?</li><li>TP, FP, FN ni siljiting. FN oshishiga qaysi metrika kuchliroq reaksiya beradi, F1 yoki F2?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Nima uchun BLEU aniqlikka, ROUGE esa toʻliqlikka yoʻnaltirilgan?</li><li>Soʻzlar mosligiga asoslangan metrikalarning qayta ifodalash misolidagi kamchiligi nima?</li><li>Qachon F1 oʻrniga F2 tanlash kerak?</li></ol>
+<nav class="n"><a href="lab17_stress.html">← Agglyutinativ tillar morfologiyasida NLP</a><a href="../index.html">☰ Barcha laboratoriyalar</a><span></span></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"pre": [{"n": "Qisqa nomzod", "r1": "mushuk xonada yumshoq gilamda oʻtiribdi", "r2": "yumshoq gilamda xonada mushuk oʻtiribdi", "c": "mushuk gilamda oʻtiribdi"}, {"n": "Soʻzlar joylashuvi", "r1": "mushuk xonada yumshoq gilamda oʻtiribdi", "r2": "", "c": "xonada mushuk yumshoq gilamda oʻtiribdi"}, {"n": "Soʻz takrori", "r1": "mushuk xonada yumshoq gilamda oʻtiribdi", "r2": "", "c": "mushuk mushuk mushuk mushuk mushuk"}, {"n": "Aniq moslik", "r1": "mushuk xonada yumshoq gilamda oʻtiribdi", "r2": "", "c": "mushuk xonada yumshoq gilamda oʻtiribdi"}], "ref1": "Etalon 1", "ref2": "Etalon 2 (ixtiyoriy)", "cand": "Nomzod (tarjima/referat)", "sm": "yumshatish", "on": "yoq", "off": "oʻch", "cl": "Mos tushdi (kesish bilan)", "pn": "Aniqlik pₙ", "bp": "Qisqalik jarimasi BP", "len": "nomzod:", "rlen": "etalon:", "zero": "Aniqliklardan biri 0 ga teng, shuning uchun yumshatishsiz BLEU = 0.", "eff": "Nomzod 4 soʻzdan qisqa: faqat quyidagi tartibgacha n-grammalar hisobga olingan:", "vsref1": "etalon 1 ga nisbatan", "tf1": "Soʻzlar boʻyicha F1", "rn": "ROUGE-N n-grammalar boʻyicha, ROUGE-L umumiy qism ketma-ketlik boʻyicha.", "h3": "F1: aniqlik va toʻliqlik", "fn": "Aniqlik = TP/(TP+FP), toʻliqlik = TP/(TP+FN)."};
+
+let r1=S.pre[0].r1,r2=S.pre[0].r2,cd=S.pre[0].c,sm_=true,TP=40,FP=10,FN=20;
+const tk=s=>(s.toLowerCase().match(/[\p{L}\p{N}ʻ]+/gu)||[]),ng=(t,n)=>{const c={};for(let i=0;i+n<=t.length;i++){const k=t.slice(i,i+n).join(' ');c[k]=(c[k]||0)+1}return c};
+function bleu(c,refs,sm){const out=[];let lp=0,zero=false,used=0;
+ for(let n=1;n<=4;n++){const cc=ng(c,n),tot=Object.values(cc).reduce((a,b)=>a+b,0);if(!tot){out.push({n,cl:0,tot:0,p:NaN});continue}let cl=0;Object.entries(cc).forEach(([k,v])=>{cl+=Math.min(v,Math.max(0,...refs.map(r=>ng(r,n)[k]||0)))});
+  const p=sm&&n>1?(cl+1)/(tot+1):cl/tot;out.push({n,cl,tot,p});used++;if(p==0)zero=true;else lp+=Math.log(p)}
+ const cl=c.length,rl=refs.map(r=>r.length).reduce((b,l)=>Math.abs(l-cl)<Math.abs(b-cl)||(Math.abs(l-cl)==Math.abs(b-cl)&&l<b)?l:b),bp=cl>rl?1:cl?Math.exp(1-rl/cl):0;
+ return{out,bp,b:zero||!used?0:bp*Math.exp(lp/used),cl,rl,used}}
+function lcs(a,b){const D=Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)D[i][j]=a[i-1]==b[j-1]?D[i-1][j-1]+1:Math.max(D[i-1][j],D[i][j-1]);return D[a.length][b.length]}
+const prf=(ov,c,r)=>{const p=c?ov/c:0,q=r?ov/r:0;return{p,r:q,f:p+q?2*p*q/(p+q):0}};
+function rougeN(c,r,n){const a=ng(c,n),b=ng(r,n);let ov=0;Object.keys(a).forEach(k=>ov+=Math.min(a[k],b[k]||0));return prf(ov,Math.max(0,c.length-n+1),Math.max(0,r.length-n+1))}
+function render(){const c=tk(cd),R=[tk(r1),...(r2.trim()?[tk(r2)]:[])],B=bleu(c,R,sm_),r1n=rougeN(c,R[0],1),r2n=rougeN(c,R[0],2),rl=prf(lcs(c,R[0]),c.length,R[0].length);
+ const a=ng(c,1),b=ng(R[0],1);let ov=0;Object.keys(a).forEach(k=>ov+=Math.min(a[k],b[k]||0));const tf=prf(ov,c.length,R[0].length);
+ const P=TP+FP?TP/(TP+FP):0,Rr=TP+FN?TP/(TP+FN):0,F1=P+Rr?2*P*Rr/(P+Rr):0,F2=P+Rr?5*P*Rr/(4*P+Rr):0;
+ const row=(n,x)=>`<tr><td>${n}</td><td class="c">${f2(x.p)}</td><td class="c">${f2(x.r)}</td><td class="c"><b>${f2(x.f)}</b></td></tr>`;
+ $('out').innerHTML=`<div class="card"><div class="row">${S.pre.map((p,i)=>btn('pr',i,esc(p.n),p.c==cd&&p.r1==r1)).join('')}</div>
+ <label>${S.ref1}</label><input type="text" id="i1" value="${esc(r1)}" data-in="i1"><label>${S.ref2}</label><input type="text" id="i2" value="${esc(r2)}" data-in="i2"><label>${S.cand}</label><input type="text" id="ic" value="${esc(cd)}" data-in="ic"></div>
+ <div class="grid"><div class="card"><b>BLEU-4</b> <span class="mut">(${S.sm}: ${btn('sm',1,S.on,sm_)}${btn('sm',0,S.off,!sm_)})</span><div class="tw"><table><tr><th>n</th><th>${S.cl}</th><th>${S.pn}</th></tr>${B.out.map(o=>`<tr><td>${o.n}</td><td class="c">${o.tot?o.cl+'/'+o.tot:'—'}</td><td class="c">${o.tot?f2(o.p):'—'}</td></tr>`).join('')}</table></div>
+ <p>${S.bp}: ${f2(B.bp)} <span class="mut">(${S.len} ${B.cl}, ${S.rlen} ${B.rl})</span></p><p class="big">BLEU = ${f3(B.b)}</p>${B.b==0?`<p class="mut">${S.zero}</p>`:''}${B.used<4?`<p class="mut">${S.eff} ${B.used}.</p>`:''}</div>
+ <div class="card"><b>ROUGE</b> <span class="mut">(${S.vsref1})</span><div class="tw"><table><tr><th></th><th>P</th><th>R</th><th>F1</th></tr>${row('ROUGE-1',r1n)}${row('ROUGE-2',r2n)}${row('ROUGE-L',rl)}${row(S.tf1,tf)}</table></div><p class="mut">${S.rn}</p></div></div>
+ <div class="card"><b>${S.h3}</b><div class="grid"><label>TP: <b>${TP}</b><input type="range" min="0" max="100" value="${TP}" data-in="tp"></label><label>FP: <b>${FP}</b><input type="range" min="0" max="100" value="${FP}" data-in="fp"></label><label>FN: <b>${FN}</b><input type="range" min="0" max="100" value="${FN}" data-in="fn"></label></div>
+ ${bar('precision',P,f2(P),'var(--ac)')}${bar('recall',Rr,f2(Rr),'var(--g)')}${bar('F1',F1,f2(F1),'var(--o)')}${bar('F2 (β=2)',F2,f2(F2),'var(--p)')}<p class="mut">${S.fn}</p></div>`}
+function keep(id,v,fn){fn(v);const p=v.length;render();const t=$(id);t.focus();t.setSelectionRange(p,p)}
+ACT.i1=v=>keep('i1',v,x=>r1=x);ACT.i2=v=>keep('i2',v,x=>r2=x);ACT.ic=v=>keep('ic',v,x=>cd=x);ACT.pr=v=>{const p=S.pre[+v];r1=p.r1;r2=p.r2;cd=p.c;render()};ACT.sm=v=>{sm_=+v==1;render()};
+ACT.tp=v=>{TP=+v;render();document.querySelector('[data-in=tp]').focus()};ACT.fp=v=>{FP=+v;render();document.querySelector('[data-in=fp]').focus()};ACT.fn=v=>{FN=+v;render();document.querySelector('[data-in=fn]').focus()};render();
+
+</script></main></body></html>

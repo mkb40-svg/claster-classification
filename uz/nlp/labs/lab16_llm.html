@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>16-laboratoriya. Katta til modellari: matn yaratish va promptlarni loyihalash</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab15_dialog.html">← Dialog tizimlari</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab17_stress.html">Agglyutinativ tillar morfologiyasida NLP →</a></nav><h1>16-laboratoriya. Katta til modellari: matn yaratish va promptlarni loyihalash</h1><p class="mut">Katta til modeli har qadamda keyingi tokenning ehtimollik taqsimotini beradi va undan bitta soʻzni tanlaydi. Tanlash parametrlari javob qanchalik bashorat qilinadigan yoki xilma-xil boʻlishini boshqaradi, prompt (soʻrov) ifodasi esa javobning oʻzini boshqaradi.</p>
+<div class="card"><b id="hA"></b><div class="row" id="cx"></div><div class="grid"><label><span id="tl"></span>: <b id="tv"></b><input type="range" min="1" max="20" value="10" data-in="t"></label><label>top-k: <b id="kv"></b><input type="range" min="1" max="8" value="8" data-in="k"></label><label>top-p: <b id="pv"></b><input type="range" min="10" max="100" step="5" value="100" data-in="p"></label></div><div id="A"></div></div><div class="card"><b id="hB"></b><div class="row" id="tk"></div><div class="row" id="cm"></div><div id="B"></div></div>
+<h2>Nima sodir boʻlmoqda</h2><p><b>Harorat</b> softmax dan oldin token baholarini boʻladi: past haroratda taqsimot oʻtkir boʻladi (deyarli doim eng ehtimolli soʻz tanlanadi), yuqori haroratda tekislanadi. <b>top-k</b> eng ehtimolli k ta tokenni qoldiradi, <b>top-p</b> umumiy ehtimoli p ga yetadigan eng kichik toʻplamni qoldiradi. Kulrang chiziqlar dastlabki ehtimollar, koʻk chiziqlar kesish va qayta normallashtirishdan keyingi taqsimot; ustiga chizilgan tokenlar chiqarib tashlangan.</p><p><b>Promptlarni loyihalash.</b> Prompt qismlardan tuziladi: rol, vazifa, kontekst, javob formati, misollar (few-shot), bosqichma-bosqich mulohaza yuritish iltimosi (<b>Chain-of-Thought, CoT</b>) va cheklovlar. Format javobni bashorat qilinadigan va dastur uchun qulay qiladi, misollar kerakli xulq-atvorni koʻrsatadi, bosqichma-bosqich mulohaza esa bir necha amalli masalalarda sezilarli yordam beradi.</p><p>Oʻngdagi javoblar tipik xulq-atvor illyustratsiyasi, haqiqiy model chiqishi emas: haqiqiy tekshiruv oʻz maʼlumotlaringizda bajariladi va sifat metrikalar bilan oʻlchanadi.</p>
+<h2>Tajribalar</h2><ol><li>«Oʻzbekiston poytaxti» ni tanlang va haroratni 0.1 gacha tushiring. Taqsimot va entropiya qanday oʻzgaradi?</li><li>Haroratni 2.0 ga qoʻying va «Tanlash» ni bir necha marta bosing. Qaysi soʻzlar chiqadi va ular orasida nechtasi maʼnoli?</li><li>Haroratni 1.0 qoldirib, top-p ni kamaytiring. Qaysi tokenlar birinchi boʻlib chiqarib tashlanadi?</li><li>Prompt blokida komponentlarni birin-ketin yoqing. Format qoʻshilganda javobda nima oʻzgaradi? Matematik masalada «bosqichma-bosqich mulohaza yurit» qoʻshilganda-chi?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>top-k top-p dan nimasi bilan farq qiladi va nima uchun top-p turli noaniqlikdagi savollar uchun qulayroq?</li><li>Nima uchun bosqichma-bosqich mulohaza (CoT) matematik masalalarda yordam beradi?</li><li>Nima uchun promptni bitta muvaffaqiyatli misolga ishonmasdan, oʻz maʼlumotlaringizda tekshirish muhim?</li></ol>
+<nav class="n"><a href="lab15_dialog.html">← Dialog tizimlari</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab17_stress.html">Agglyutinativ tillar morfologiyasida NLP →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"ctx": [{"p": "Oʻzbekiston poytaxti", "t": ["Toshkent", "shahar", "Samarqand", "Moskva", "katta", "goʻzal", "<\/s>", "Buxoro"], "l": [4, 2, 1.2, -0.5, 0.5, 0.2, 0.1, 0.8]}, {"p": "Bir bor ekan, bir yoʻq ekan, oʻrmonda yashar edi", "t": ["ayiq", "chol", "boʻri", "quyon", "podshoh", "ajdaho", "ovchi", "bola"], "l": [2.2, 1.8, 1.7, 1.4, 1, 0.8, 1.5, 1.3]}, {"p": "2 + 2 =", "t": ["4", "5", "22", "toʻrt", "3", "olti", "?", "oʻn"], "l": [4.5, 1, 0.8, 2.5, 0.7, -0.5, -0.3, -1]}], "hA": "1. Keyingi soʻzni tanlash: harorat, top-k, top-p", "tl": "Harorat", "legA": "Kulrang: dastlabki, koʻk: kesishdan keyin.", "ent": "Entropiya", "bits": "bit", "samp": "12 marta tanlash", "greedy": "Ochkoʻz tanlov", "res": "Natija", "hB": "2. Prompt konstruktori", "prompt": "Yigʻilgan prompt", "tok": "token", "out": "Model javobining illyustratsiyasi", "outn": "Bu tipik xulq-atvor misoli, haqiqiy model chiqishi emas.", "cn": {"role": "Rol", "task": "Vazifa", "context": "Kontekst", "format": "Format", "examples": "Misollar (few-shot)", "cot": "Bosqichma-bosqich mulohaza (CoT)", "constraints": "Cheklovlar"}, "tasks": [{"n": "Sharh ohangi", "inp": "Sharh: «Film yoqmadi, juda zerikarli.»", "p": {"role": "Sen sharhlar tahlilchisisan.", "task": "Sharhning ohangini aniqla: positive yoki negative.", "context": "Sharhni kinoteatr tomoshabini yozgan.", "format": "Bitta soʻz bilan javob ber: positive yoki negative.", "examples": "Misol: «Ajoyib xizmat!» → positive\nMisol: «Juda uzoq kutdik» → negative", "cot": "Avval qaysi soʻzlar ohangni bildirishini qisqa tushuntir, soʻng javob ber.", "constraints": "Ishonching komil boʻlmasa, neutral deb javob ber."}, "o": {"plain": "Koʻrinishidan, sharh salbiy: muallif filmni yoqtirmagan va zerikkan.", "fmt": "negative", "cot": "«Yoqmadi» va «zerikarli» norozilikni bildiradi. Javob: negative"}}, {"n": "Matematik masala", "inp": "Masala: Sinfda 24 oʻquvchi bor. Uchdan biri toʻgaraka bordi, qolganlarning toʻrtdan biri kasal boʻlib qoldi. Sinfda nechta oʻquvchi qoldi?", "p": {"role": "Sen matematika repetitorisan.", "task": "Masalani yech.", "context": "5-sinf uchun masala.", "format": "Oxirida yoz: Javob: <son>.", "examples": "Misol: Vazada 10 ta olma bor, 2 tasi yeyildi. Qoldi 8. Javob: 8", "cot": "Bosqichma-bosqich mulohaza yurit va hisoblarni tekshir.", "constraints": "Oraliq amallarni oʻtkazib yuborma."}, "o": {"plain": "16", "fmt": "Javob: 16", "cot": "1) 24 / 3 = 8 ta toʻgarakka ketdi. 2) Qoldi 24 − 8 = 16. 3) 16 ning toʻrtdan biri 4 ta kasal. 4) Qoldi 16 − 4 = 12. Javob: 12"}}]};
+
+let ci=0,T=1,K=8,Pp=1,samp=null,task=0,on={role:1,task:1,context:0,format:0,examples:0,cot:0,constraints:0};
+function dist(){const c=S.ctx[ci],pr=sm(c.l.map(x=>x/T)),o=pr.map((p,i)=>[i,p]).sort((a,b)=>b[1]-a[1]);let cum=0,keep=new Set();
+ o.forEach(([i,p],r)=>{if(r<K&&(cum<Pp||r==0)){keep.add(i)}cum+=p});const z=[...keep].reduce((a,i)=>a+pr[i],0);return{pr,fin:pr.map((p,i)=>keep.has(i)?p/z:0)}}
+function drawA(){const c=S.ctx[ci],D=dist(),H=-D.fin.reduce((a,p)=>p>0?a+p*Math.log2(p):a,0);$('tv').textContent=T.toFixed(1);$('kv').textContent=K;$('pv').textContent=Pp.toFixed(2);
+ $('A').innerHTML=`<p class="big">${esc(c.p)} …</p>${c.t.map((w,i)=>`<div class="bar"><span class="l" style="${D.fin[i]?'':'opacity:.4;text-decoration:line-through'}">${esc(w)}</span><i style="width:${D.pr[i]*55}%;background:var(--bd)"></i><span class="mut">${(D.pr[i]*100).toFixed(0)}%</span> <i style="width:${D.fin[i]*55}%;background:var(--ac);margin-left:8px"></i>${D.fin[i]?(D.fin[i]*100).toFixed(0)+'%':''}</div>`).join('')}
+ <p class="mut">${S.legA} ${S.ent}: ${H.toFixed(2)} ${S.bits}</p><div class="row">${btn('sm',0,S.samp)}${btn('gr',0,S.greedy)}</div>${samp?`<p>${S.res}: ${samp.map(w=>`<span class="tag">${esc(w)}</span>`).join('')}</p>`:''}`}
+ACT.t=v=>{T=+v/10;samp=null;drawA()};ACT.k=v=>{K=+v;samp=null;drawA()};ACT.p=v=>{Pp=+v/100;samp=null;drawA()};ACT.cx=v=>{ci=+v;samp=null;cxs();drawA()};
+ACT.sm=()=>{const c=S.ctx[ci],D=dist();samp=Array.from({length:12},()=>{let u=Math.random(),i=0;while(i<D.fin.length-1&&u>D.fin[i]){u-=D.fin[i];i++}return c.t[i]});drawA()};
+ACT.gr=()=>{const c=S.ctx[ci],D=dist();samp=[c.t[D.fin.indexOf(Math.max(...D.fin))]];drawA()};
+function cxs(){$('cx').innerHTML=S.ctx.map((c,i)=>btn('cx',i,esc(c.p),i==ci)).join('')}
+function drawB(){const tk=S.tasks[task],keys=['role','task','context','format','examples','cot','constraints'];
+ $('tk').innerHTML=S.tasks.map((x,i)=>btn('tk',i,esc(x.n),i==task)).join('');
+ $('cm').innerHTML=keys.map(k=>btn('cm',k,S.cn[k],on[k])).join('');
+ const prompt=[...keys.filter(k=>on[k]).map(k=>tk.p[k]),tk.inp].join('\n\n'),words=prompt.split(/\s+/).length;
+ const out=task==1?(on.cot?tk.o.cot:tk.o.plain):(on.cot?tk.o.cot:on.format?tk.o.fmt:tk.o.plain);
+ $('B').innerHTML=`<div class="grid"><div><p class="mut">${S.prompt} (~${Math.round(words*1.4)} ${S.tok})</p><pre style="white-space:pre-wrap;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px;font:inherit;font-size:.92rem;margin:0">${esc(prompt)}</pre></div>
+ <div><p class="mut">${S.out}</p><div class="card"><p>${esc(out)}</p></div><p class="mut">${S.outn}</p></div></div>`}
+ACT.tk=v=>{task=+v;drawB()};ACT.cm=v=>{on[v]=on[v]?0:1;drawB()};
+$('hA').textContent=S.hA;$('hB').textContent=S.hB;$('tl').textContent=S.tl;cxs();drawA();drawB();
+
+</script></main></body></html>

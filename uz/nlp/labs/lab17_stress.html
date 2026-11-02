@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>17-laboratoriya. Agglyutinativ tillar morfologiyasida NLP algoritmlarini stress-testlash</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab16_llm.html">← Katta til modellari</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab18_metrics.html">Sifat metrikalari →</a></nav><h1>17-laboratoriya. Agglyutinativ tillar morfologiyasida NLP algoritmlarini stress-testlash</h1><p class="mut">Ingliz tilida sozlangan algoritmlar soʻz qoʻshimchalar zanjiridan yigʻiladigan tillarda koʻpincha «buziladi». Bu yerda ikki stress-test koʻrsatilgan: notanish soʻzlar soni qanchalik tez oʻsadi va oddiy stemmer qanday xato qiladi.</p>
+<div class="card"><label><span id="nl"></span>: <b id="nv"></b><input type="range" min="0" max="5" value="2" data-in="n"></label></div><div id="out"></div>
+<h2>Nima sodir boʻlmoqda</h2><p><b>1-test. Notanish soʻzlar.</b> Simulyatsiyada har bir otning shakllari toʻplami bor: inglizchada 2 ta, ruschada 12 ta (son × kelishik), oʻzbekchada 72 ta (son × egalik × kelishik, bizning qoʻshimchalar toʻplamimizda; aslida koʻproq). Model oʻqitish korpusidan n ta soʻzni koʻradi, keyin yangilarini uchratadi. <b>Yaxlit chiziqlar</b> shakllari oʻqitishda uchramagan soʻzlar ulushini (butun soʻzlar lugʻati), <b>punktirli chiziqlar</b> notanish <i>ildizli</i> soʻzlar ulushini (qism soʻzlar lugʻati) koʻrsatadi. Agglyutinativ til uchun birinchi ulush juda sekin kamayadi, ikkinchisi tez: shuning uchun u yerda soʻz qismlari boʻyicha tokenizatsiya (BPE) yoki morfologik tahlil kerak.</p><p><b>2-test. Oʻzbek tilida stemmer.</b> 3-laboratoriyadagi oddiy stemmer (qoʻshimchalarni qatlamlar boʻyicha kesish) har bir ildizning barcha 72 shaklida tekshiriladi. Almashinuvsiz ildizlar («uy», «kitob») toʻgʻri ishlanadi, tovush almashinuvi boʻlgan ildizlar («qishloq → qishlogʻim», «koʻylak → koʻylagʻim») esa buziladi: unli qoʻshimcha oldidan undosh oʻzgaradi va ildiz tiklanmaydi.</p><p>Xulosa: agglyutinativ tillar uchun faqat «oddiy» soʻzlardagi aniqlik emas, balki kam uchraydigan shakllar, uzun qoʻshimchalar zanjiri va tovush almashinuviga chidamlilik ham sinab koʻriladi.</p>
+<h2>Tajribalar</h2><ol><li>Oʻqitish korpusi hajmini oʻzgartiring. Qaysi hajmda inglizchada notanish shakllar ulushi 5% dan pastga tushadi? Ruscha va oʻzbekchada-chi?</li><li>Oʻzbek tili uchun yaxlit va punktirli chiziqlarni solishtiring. Qism soʻzlar lugʻati notanish soʻzlardan necha marta kam aziyat chekadi?</li><li>2-testda stemmer xato qiladigan ildizlarni toping. «qishloq» va «koʻylak» ning umumiy tomoni nima?</li><li>Almashinuvni tuzatadigan qoida taklif qiling (qishlogʻ → qishloq). Uning konveyerdagi oʻrni qayerda?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Nima uchun oʻzbek tilida butun soʻzlar lugʻati inglizchaga qaraganda tezroq oʻsadi?</li><li>Stemmerning qaysi xatolarini qoʻshimchalar roʻyxatini kengaytirish bilan tuzatib boʻlmaydi?</li><li>BPE (2-laboratoriya) va FastText (5-laboratoriya) notanish shakllar muammosini qanday hal qiladi?</li></ol>
+<nav class="n"><a href="lab16_llm.html">← Katta til modellari</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab18_metrics.html">Sifat metrikalari →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"nl": "Oʻqitish korpusi hajmi (soʻzlar)", "h1": "Testdagi notanish soʻzlar ulushi", "legend": "Yaxlit chiziq: butun soʻzlar lugʻati. Punktir: ildizlar lugʻati (qism soʻzlar). Vertikal chiziq: tanlangan hajm. Punktirlar barcha tillarda mos tushadi: ildizlar toʻplami va chastotalari bir xil berilgan.", "lang": "Til", "forms": "Soʻzning shakllari", "types": "Oʻqitishdagi turli shakllar", "ow": "Notanish shakllar", "ol": "Notanish ildizlar", "ln": {"en": "Ingliz", "ru": "Rus", "uz": "Oʻzbek"}, "h2": "2-stress-test: oʻzbekcha shakllarda stemmer", "stn": "Har bir ildiz 72 shaklda tekshiriladi: ildiz + (-lar) + (egalik) + (kelishik qoʻshimchasi).", "root": "Ildiz", "acc": "Toʻgʻri", "fail": "Birinchi xato (shakl → natija)"};
+
+const SIZES=[100,300,1000,3000,10000,30000],LS=[['en',2,'--mut'],['ru',12,'--o'],['uz',72,'--r']],NL=300;let ni=2,res={};
+function sampler(F,seed){const R=rng(seed),lw=Array.from({length:NL},(_,i)=>1/(i+1)),fw=Array.from({length:F},(_,i)=>1/Math.pow(i+1,.6)),cum=a=>{let s=0;return a.map(x=>s+=x)},lc=cum(lw),fc=cum(fw),pick=(c)=>{const u=R()*c[c.length-1];let lo=0,hi=c.length-1;while(lo<hi){const m=(lo+hi)>>1;if(c[m]<u)lo=m+1;else hi=m}return lo};return()=>[pick(lc),pick(fc)]}
+function sim(){LS.forEach(([k,F])=>{const test=(()=>{const s=sampler(F,99);return Array.from({length:5000},s)})();res[k]=SIZES.map(n=>{const s=sampler(F,7),seen=new Set(),lem=new Set();for(let i=0;i<n;i++){const[l,f]=s();seen.add(l*100+f);lem.add(l)}
+ let ow=0,ol=0;test.forEach(([l,f])=>{if(!seen.has(l*100+f))ow++;if(!lem.has(l))ol++});return{types:seen.size,ow:ow/5000,ol:ol/5000,lem:lem.size}})})}
+function chart(){const[x,w,h]=cv('ch'),X=i=>34+i/5*(w-48),Y=v=>h-22-v*(h-34);x.strokeStyle=col('--bd');x.strokeRect(.5,.5,w-1,h-1);x.fillStyle=col('--mut');x.font='11px system-ui';
+ [0,.5,1].forEach(v=>x.fillText(Math.round(v*100)+'%',2,Y(v)+4));SIZES.forEach((n,i)=>x.fillText(n,X(i)-8,h-6));
+ LS.forEach(([k,F,c])=>{[['ow',[]],['ol',[5,4]]].forEach(([m,d])=>{x.beginPath();x.strokeStyle=col(c);x.lineWidth=m=='ow'?2.4:1.6;x.setLineDash(d);res[k].forEach((r,i)=>i?x.lineTo(X(i),Y(r[m])):x.moveTo(X(i),Y(r[m])));x.stroke()});x.setLineDash([])});
+ x.setLineDash([2,3]);x.strokeStyle=col('--fg');x.beginPath();x.moveTo(X(ni),6);x.lineTo(X(ni),h-22);x.stroke();x.setLineDash([])}
+// stemmer stress
+const L1=["ning","dagi","gacha","ni","ga","da","dan","ka","qa"],L2=["imiz","ingiz","im","ing","i"],L3=["lar"];
+function strip(w){for(const L of [L1,L2,L3]){const c=[...L].sort((a,b)=>b.length-a.length).find(s=>w.endsWith(s)&&w.length-s.length>=2);if(c)w=w.slice(0,-c.length)}return w}
+const RT=[['uy','uy'],['kitob','kitob'],['maktab','maktab'],['qishloq','qishlogʻ'],['koʻylak','koʻylagʻ']],PL=['','lar'],PO=['','im','ing','i','imiz','ingiz'],CA=['','ning','ni','ga','da','dan'];
+function stress(){return RT.map(([r,alt])=>{let ok=0,n=0,ex=null;PL.forEach(p=>PO.forEach(o=>CA.forEach(c=>{const base=(p==''&&o!='')?alt:r,f=base+p+o+c,got=strip(f);n++;if(got==r)ok++;else if(!ex)ex=f+' → '+got})));return{r,ok,n,ex}})}
+function render(){const t=S,s=stress();$('nv').textContent=SIZES[ni];
+ $('out').innerHTML=`<div class="card"><b>${t.h1}</b><p class="mut">${t.legend}</p><canvas id="ch" style="height:230px"></canvas></div>
+ <div class="card tw"><table><tr><th>${t.lang}</th><th>${t.forms}</th><th>${t.types}</th><th>${t.ow}</th><th>${t.ol}</th></tr>${LS.map(([k,F])=>`<tr><td>${t.ln[k]}</td><td class="c">${F}</td><td class="c">${res[k][ni].types}</td><td class="c ${res[k][ni].ow>.2?'bad':''}">${(res[k][ni].ow*100).toFixed(1)}%</td><td class="c">${(res[k][ni].ol*100).toFixed(1)}%</td></tr>`).join('')}</table></div>
+ <div class="card tw"><b>${t.h2}</b><p class="mut">${t.stn}</p><table><tr><th>${t.root}</th><th>${t.acc}</th><th>${t.fail}</th></tr>${s.map(r=>`<tr><td>${esc(r.r)}</td><td class="c ${r.ok<r.n?'bad':'ok'}">${r.ok}/${r.n}</td><td>${r.ex?esc(r.ex):'—'}</td></tr>`).join('')}</table></div>`;chart()}
+$('nl').textContent=S.nl;ACT.n=v=>{ni=+v;render()};sim();render();addEventListener('resize',render);
+
+</script></main></body></html>

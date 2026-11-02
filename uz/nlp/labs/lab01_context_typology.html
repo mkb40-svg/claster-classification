@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NLP 1</title>
+<style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--root:#2b7de9;--gram:#e8841a;--ac:#2b7de9;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--root:#5b9cf5;--gram:#f0a04b;--ac:#5b9cf5}}
+:root[data-theme="dark"]{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--root:#5b9cf5;--gram:#f0a04b;--ac:#5b9cf5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+.top{display:flex;justify-content:flex-end;gap:6px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%}
+button{font:inherit;padding:7px 11px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}
+button.on{border-color:var(--fg);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.92rem;margin:6px 0}.bar span.l{flex:0 0 38%}.bar i{display:block;height:14px;border-radius:5px;background:var(--ac);transition:width .3s}
+.chips{display:inline-flex;flex-wrap:wrap;gap:3px;align-items:flex-start}
+.mc{display:inline-block;text-align:center;border-radius:6px;padding:2px 7px;border:2px solid var(--root);color:var(--fg)}.mc.g{border-color:var(--gram)}.mc small{display:block;font-size:.68rem;color:var(--mut)}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.92rem;width:100%}td,th{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+.big{font-size:1.5rem;word-break:break-all}.sep{display:inline-block;width:8px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px;color:var(--mut)"><span></span><a href="../index.html" style="color:var(--fg)">☰ Barcha laboratoriyalar</a><a href="lab02_bpe.html" style="color:var(--fg)">Matnni tozalash, normallashtirish va BPE →</a></nav>
+<div id="app"></div>
+<nav style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px;color:var(--mut)"><span></span><a href="../index.html" style="color:var(--fg)">☰ Barcha laboratoriyalar</a><a href="lab02_bpe.html" style="color:var(--fg)">Matnni tozalash, normallashtirish va BPE →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+let L='uz',ai=0,ci=-1,ei=0,rt=0,pl=1,ps=4,cs=4;
+const ROOTS=['uy','kitob','maktab'],POSS=['','im','ing','i','imiz','ingiz'],PG=['','1SG.POSS','2SG.POSS','3SG.POSS','1PL.POSS','2PL.POSS'],CAS=['','ning','ni','ga','da','dan'],CG=['NOM','GEN','ACC','DAT','LOC','ABL'],RG=['HOUSE','BOOK','SCHOOL'];
+const TY=[{k:'zh',ty:'zh',m:[['在','in',0],['我','1',0],['们','PL',1],['的','GEN',1],['房子','house',0],['里','inside',0]],w:[[0],[1,2],[3],[4],[5]]},
+ {k:'en',ty:'en',m:[['in','in',0],['our','1PL.POSS',1],['house','house',0],['-s','PL',1]],w:[[0],[1],[2,3]]},
+ {k:'ru',ty:'ru',m:[['в','in',0],['наш','1PL',0],['-их','PL.PREP',1],['дом','house',0],['-ах','PL.PREP',1]],w:[[0],[1,2],[3,4]]},
+ {k:'uz',ty:'uz',m:[['uy','house',0],['-lar','PL',1],['-imiz','1PL.POSS',1],['-da','LOC',1]],w:[[0,1,2,3]]}];
+const T={
+uz:{title:'1-laboratoriya. NLP rivoji va lingvistik tipologiya: kontekst va koʻp maʼnolilik',
+ intro:'Kompyuter tilni tushunishi uchun ikki qiyinchilikni yengishi kerak: bir xil soʻz yoki jumla turli maʼno berishi mumkin (koʻp maʼnolilik), maʼnoni tanlashga esa faqat kontekst yordam beradi. Masalaning qiyinligi tilning tuzilishiga ham bogʻliq: tillar tipologik jihatdan turlicha tuzilgan.',
+ A:'1. Koʻp maʼnolilik va kontekst',hA:'Jumlani tanlang va kontekst qoʻshing: har bir oʻqilish ehtimoli qanday oʻzgaradi? (Ehtimollar illyustrativ: ular gʻoyani koʻrsatadi, haqiqiy model natijasini emas.)',
+ ty:{lex:'leksik',syn:'sintaktik (tuzilish)',mor:'morfologik'},no:'Kontekstsiz',pr:'Oʻqilishlar va ularning ehtimoli',
+ items:[{s:'Men koʻk oldim.',t:'lex',r:['koʻk = koʻkat, zelenchuk','koʻk = koʻk rangli narsa'],c:[{t:'Bozorda palov uchun xarid qilayotgan edim.',w:[1,-1]},{t:'Kiyim doʻkonida koʻylak tanlayotgan edim.',w:[-1,1]}]},
+  {s:'Men durbin bilan odamni koʻrdim.',t:'syn',r:['men durbin orqali koʻrdim','odamning qoʻlida durbin bor edi'],c:[{t:'Togʻ tepasidan uzoqdagi yoʻlni kuzatayotgan edim.',w:[1,-1]},{t:'U qoʻlida katta durbin ushlab turgan edi.',w:[-1,1]}]},
+  {s:'Yoz.',t:'mor',r:['yoz = «yozmoq» feʼlining buyruq shakli','yoz = fasl (ot)'],c:[{t:'Dars paytida oʻqituvchi doskaga ishora qildi.',w:[1,-1]},{t:'Yilning eng issiq faslini aytishdi.',w:[-1,1]}]}],
+ B:'2. Tipologiya: soʻz qanday tuziladi',hB:'«Bizning uylarimizda» fikri toʻrt tilda. Ildizlar koʻk, grammatik morfemalar toʻq sariq rangda; morfema ostida uning maʼnosi (glossa).',
+ cols:['Til','Tip','Soʻz','Morfema','Bir soʻzga morfema'],ln:{zh:'Xitoy',en:'Ingliz',ru:'Rus',uz:'Oʻzbek'},tn:{zh:'izolyatsiyalovchi',en:'analitik',ru:'flektiv',uz:'agglyutinativ'},
+ bd:'Oʻzbekcha soʻzni qoʻshimchalardan yigʻing',root:'Ildiz',plu:'Koʻplik',pos:'Egalik',cas:'Kelishik',yes:'bor',nop:'yoʻq',
+ fm:'Bitta otning shakllari soni',fn:'Oʻzbek tilida qoʻshimchalar ketma-ket qoʻshiladi, shuning uchun shakllar soni tez ortadi (bu yerda 2 × 6 × 6 = 72, aslida koʻproq). Shu sababli bunday tillar uchun soʻz qismlariga boʻlib tokenizatsiya qilish (BPE, keyingi mavzu) zarur.',
+ C:'3. NLP tarixi: koʻp maʼnolilikka yondashuv qanday oʻzgargan',
+ eras:[['1950–1980','Qoidalar','Grammatika va lugʻatlar qoʻlda yozilgan: Jorjtaun tajribasi (1954), ELIZA (1966).','Koʻp maʼnolilik «agar … unda» qoidalari bilan hal qilingan. Qoidalar hamma holatni qamramagan.'],
+  ['1990–2000-yillar','Statistika','Modellar korpuslarda oʻrgangan: n-grammalar, HMM, IBM statistik tarjimasi.','Qoʻshni soʻzlar chastotasiga qarab eng ehtimolli maʼno tanlangan (tor kontekst).'],
+  ['2013','Statik vektorlar','word2vec, GloVe, FastText: har bir soʻzga bitta vektor.','«Koʻk» soʻziga barcha maʼnolar uchun bitta vektor beriladi: kontekst farqlanmaydi.'],
+  ['2017','Transformer','Diqqat mexanizmi («Attention Is All You Need»): har bir soʻz qolgan hamma soʻzlarga «qaraydi».','Butun jumla konteksti har bir soʻzni qayta ishlashda ishtirok etadi.'],
+  ['2018','Kontekstli vektorlar','BERT: soʻz vektori jumlaga bogʻliq.','«Koʻk» soʻzi bozorda va kiyim doʻkonida turli vektor oladi.'],
+  ['2020 va keyin','Katta til modellari','GPT-3 (2020), ChatGPT (2022): soʻrov boʻyicha matn yaratish.','Kontekstni soʻrov (prompt) beradi; model butun suhbatga qarab maʼno tanlaydi.']],
+ how:'Koʻp maʼnolilikni qanday hal qiladi',
+ E:'Tajribalar',ex:['«Men koʻk oldim» jumlasini tanlab, kontekstlarni birin-ketin qoʻshing. Kontekstsiz va kontekst bilan qaysi oʻqilish yetakchi?','Koʻp maʼnolilikning uch turini solishtiring. Qaysi holatda kontekst soʻz maʼnosini emas, jumla tuzilishini tushunish uchun kerak?','Tipologiya jadvalida toʻrt tilda bir soʻzga toʻgʻri keladigan morfemalar sonini solishtiring. Oʻzbek va xitoy tillarida nima koʻrinadi?','uylarimizda soʻzini yigʻib, kelishikni oʻzgartiring. Xuddi shu fikrni rus tilida nechta soʻz bilan berish kerak?','Davrlar boʻylab oʻting. Qaysi davrdan boshlab bitta soʻz turli jumlalarda turli vektor oladi?'],
+ Q:'Oʻz-oʻzini tekshirish savollari',qs:['Agglyutinativ tillarda soʻz shakllarining koʻpligi nima uchun lugʻat muammosiga aylanadi va BPE tokenizatsiyasi bunga qanday yordam beradi?','Oʻzbek yoki rus tilidan koʻp maʼnoli jumla misolini keltiring va uning turini aniqlang.','Nima uchun statik vektorlar (word2vec) leksik koʻp maʼnolilikni hal qilmaydi?']}};
+function sm(w){const z=w.map(x=>Math.exp(2.2*x)),s=z.reduce((a,b)=>a+b,0);return z.map(v=>v/s)}
+function chip(m){return `<span class="mc${m[2]?' g':''}">${m[0]}<small>${m[1]}</small></span>`}
+function render(){const t=T[L],it=t.items[ai];document.title=t.title;document.documentElement.lang=L==='uz'?'uz':'ru';
+ 
+ const w=ci<0?it.r.map(()=>0):it.c[ci].w,p=sm(w);
+ let h=`<h1>${t.title}</h1><p class="mut">${t.intro}</p><h2>${t.A}</h2><p class="mut">${t.hA}</p><div class="row">${t.items.map((x,i)=>`<button data-act="item" data-v="${i}" class="${i==ai?'on':''}">${x.s}</button>`).join('')}</div>
+ <div class="card"><p class="big" style="word-break:normal">${it.s}</p><p class="mut">${t.ty[it.t]}</p>
+ <div class="row"><button data-act="ctx" data-v="-1" class="${ci<0?'on':''}">${t.no}</button>${it.c.map((c,i)=>`<button data-act="ctx" data-v="${i}" class="${i==ci?'on':''}">${c.t}</button>`).join('')}</div>
+ <p class="mut">${t.pr}</p>${it.r.map((r,i)=>`<div class="bar"><span class="l">${r}</span><i style="width:${p[i]*55}%"></i>${Math.round(p[i]*100)}%</div>`).join('')}</div>
+ <h2>${t.B}</h2><p class="mut">${t.hB}</p><div class="card tw"><table><tr>${t.cols.map(c=>`<th>${c}</th>`).join('')}</tr>${TY.map(y=>{const nm=y.m.length,nw=y.w.length;
+  return `<tr><td>${t.ln[y.k]}</td><td>${t.tn[y.ty]}</td><td>${nw}</td><td>${nm}</td><td>${(nm/nw).toFixed(1)}</td></tr><tr><td colspan="5">${y.w.map(g=>`<span class="chips">${g.map(i=>chip(y.m[i])).join('')}</span><span class="sep"></span>`).join('')}</td></tr>`}).join('')}</table></div>
+ <div class="card"><b>${t.bd}</b>
+ <div class="row"><span class="mut">${t.root}:</span>${ROOTS.map((r,i)=>`<button data-act="rt" data-v="${i}" class="${i==rt?'on':''}">${r}</button>`).join('')}</div>
+ <div class="row"><span class="mut">${t.plu}:</span><button data-act="pl" data-v="1" class="${pl?'on':''}">-lar (${t.yes})</button><button data-act="pl" data-v="0" class="${pl?'':'on'}">${t.nop}</button></div>
+ <div class="row"><span class="mut">${t.pos}:</span>${POSS.map((s,i)=>`<button data-act="ps" data-v="${i}" class="${i==ps?'on':''}">${s?'-'+s:t.nop}</button>`).join('')}</div>
+ <div class="row"><span class="mut">${t.cas}:</span>${CAS.map((s,i)=>`<button data-act="cs" data-v="${i}" class="${i==cs?'on':''}">${s?'-'+s:t.nop}</button>`).join('')}</div>
+ <p class="big">${ROOTS[rt]+(pl?'lar':'')+POSS[ps]+CAS[cs]}</p>
+ <span class="chips">${chip([ROOTS[rt],RG[rt],0])}${pl?chip(['-lar','PL',1]):''}${ps?chip(['-'+POSS[ps],PG[ps],1]):''}${cs?chip(['-'+CAS[cs],CG[cs],1]):''}</span>
+ <p><b>${t.fm}</b></p>${[['zh',1],['en',2],['ru',12],['uz',72]].map(([k,n])=>`<div class="bar"><span class="l">${t.ln[k]}</span><i style="width:${Math.log(n+1)/Math.log(73)*50}%"></i>${n}${k=='uz'?'+':''}</div>`).join('')}<p class="mut">${t.fn}</p></div>
+ <h2>${t.C}</h2><div class="row">${t.eras.map((e,i)=>`<button data-act="era" data-v="${i}" class="${i==ei?'on':''}">${e[0]}</button>`).join('')}</div>
+ <div class="card"><b>${t.eras[ei][1]}</b><p>${t.eras[ei][2]}</p><p><b>${t.how}:</b> ${t.eras[ei][3]}</p></div>
+ <h2>${t.E}</h2><ol>${t.ex.map(x=>`<li>${x}</li>`).join('')}</ol><h2>${t.Q}</h2><ol>${t.qs.map(x=>`<li>${x}</li>`).join('')}</ol>`;
+ $('app').innerHTML=h}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const v=b.dataset.v,a=b.dataset.act;
+ if(a=='item'){ai=+v;ci=-1}else if(a=='ctx')ci=+v;else if(a=='rt')rt=+v;else if(a=='pl')pl=+v;else if(a=='ps')ps=+v;else if(a=='cs')cs=+v;else if(a=='era')ei=+v;render()});
+render();
+</script></main></body></html>

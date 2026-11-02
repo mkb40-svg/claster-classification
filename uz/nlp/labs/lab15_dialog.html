@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>15-laboratoriya. Dialog tizimlari: intentlar, slotlar va dialog ssenariysi</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab14_qa.html">← Savol-javob tizimlari</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab16_llm.html">Katta til modellari →</a></nav><h1>15-laboratoriya. Dialog tizimlari: intentlar, slotlar va dialog ssenariysi</h1><p class="mut">Maqsadli dialog boti (masalan, taksi buyurtma qilish) gapni ikki bosqichda tushunadi: niyatni (intent) aniqlaydi va parametrlarni (slotlar) ajratib oladi. Soʻng dialog menejeri nima deb javob berishni hal qiladi: yetishmayotganini soʻrash, tasdiqlash yoki yakunlash.</p>
+<div id="out"></div>
+<h2>Nima sodir boʻlmoqda</h2><p><b>Intent</b> foydalanuvchi nimani xohlashi: «taksi buyurtma qilish», «bekor qilish», «salomlashish». Bu yerda u kalit soʻzlar boʻyicha aniqlanadi, haqiqiy tizimlarda intent tasniflagichi bilan (tasniflash laboratoriyalaridagi kabi). Hech bir soʻz mos kelmasa, bot «tushunmadim» (fallback) deb javob beradi.</p><p><b>Slotlar</b> masalaning parametrlari: qayerdan, qayerga, qachon. Rus tilidagi predloglar oʻrniga oʻzbek tilida <b>qoʻshimchalar</b> ishlatiladi: «vokzaldan» (-dan) «qayerdan», «aeroportga» (-ga) «qayerga» degani. Shuning uchun slotlarni ajratish soʻz oxiriga qarab bajariladi. Vaqt shablon boʻyicha topiladi; haqiqiy tizimlarda NER modellari ishlatiladi (9-laboratoriya).</p><p><b>Dialog menejeri</b> holatni saqlaydi (qaysi slotlar toʻldirilgan) va ssenariy boʻyicha amal tanlaydi: slotlar yetmaguncha savol beradi, hammasi yigʻilganda tasdiq soʻraydi. Generativ modellar (LLM) qoidalarni almashtirishi mumkin, lekin «intent + slotlar + holat» karkasi boshqariladigan botlarning asosi boʻlib qoladi.</p>
+<h2>Tajribalar</h2><ol><li>«Salom», soʻng «Vokzaldan aeroportga taksi buyurtma qilmoqchiman» deb yozing. Qaysi slotlar toʻldirildi?</li><li>«Taksi kerak» deb yozing, soʻng bot savollariga bitta soʻz bilan javob bering («vokzal», keyin «aeroport», keyin «18:30»). Bot kontekstdan qanday foydalanadi?</li><li>Tasdiqlangandan keyin «yoʻq» deb yozing. Dialog holatiga nima boʻladi?</li><li>Qoidalarda yoʻq gap yozing (masalan, «ob-havo qanday?»). Bot qanday javob beradi va buni qanday yaxshilash mumkin?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Intent va slot nimasi bilan farq qiladi? Oʻz misolingizni keltiring.</li><li>Nima uchun dialog menejeri gaplar orasida holatni saqlashi kerak?</li><li>Qoidalarni katta til modeli bilan almashtirishning qanday afzallik va xavflari bor?</li></ol>
+<nav class="n"><a href="lab14_qa.html">← Savol-javob tizimlari</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab16_llm.html">Katta til modellari →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"mode": "suffix", "kw": {"book": ["taksi", "buyurtma", "chaqir", "bor", "kerak", "xohlay", "moqchi"], "cancel": ["bekor"], "greet": ["salom", "assalom"], "thanks": ["rahmat"], "yes": ["ha", "toʻgʻri", "tasdiq"], "no": ["yoʻq", "notoʻgʻri"]}, "places": ["vokzal", "aeroport", "markaz", "universitet", "bozor", "metro"], "fromP": [], "toP": [], "fromS": ["dan"], "toS": ["ga", "gacha"], "now": ["hozir", "tezda"], "nowl": "hozir", "r": {"greet": "Assalomu alaykum! Taksi buyurtma qilishga yordam beraman. Qayerga boramiz?", "thanks": "Marhamat! Murojaat qiling.", "cancel": "Buyurtma bekor qilindi.", "again": "Yaxshi, boshidan boshlaymiz. Sizni qayerdan olib ketay?", "fallback": "Kechirasiz, tushunmadim. Qayerdan va qayerga borish kerakligini ayting.", "ask_from": "Sizni qayerdan olib ketay?", "ask_to": "Qayerga boramiz?", "ask_time": "Qaysi vaqtga buyurtma qilay? (masalan, 18:30 yoki «hozir»)", "confirm": "Buyurtmani tekshiring: «{from}»dan «{to}»ga, vaqti «{time}». Tasdiqlaysizmi?", "done": "Tayyor! «{from}»dan «{to}»ga taksi «{time}» ga buyurtma qilindi."}, "ex": ["Salom", "Vokzaldan aeroportga taksi buyurtma qilmoqchiman", "Taksi kerak", "vokzal", "ha"], "h1": "Bot bilan dialog", "hint": "Gap yozing yoki misolni bosing.", "ph": "Gapingiz…", "send": "Yuborish", "reset": "Boshidan", "h2": "Bot nimani tushundi", "intents": "Niyatlar", "il": {"book": "taksi buyurtmasi", "cancel": "bekor qilish", "greet": "salomlashish", "thanks": "minnatdorchilik", "yes": "ha", "no": "yoʻq"}, "det": "Aniqlangan intent", "fb": "tushunilmadi (fallback)", "slots": "Slotlar", "sn": {"from": "qayerdan", "to": "qayerga", "time": "qachon"}, "state": "Dialog holati", "confirming": "tasdiq kutmoqda", "asking": "slot haqida soʻramoqda", "idle": "soʻrov kutmoqda"};
+
+const I=['book','cancel','greet','thanks','yes','no'];
+let st,log=[],last=null;
+const T=s=>(s.toLowerCase().match(/[\p{L}\p{N}ʻ:.]+/gu)||[]);
+function reset(){st={from:null,to:null,time:null,conf:false,ask:null};log=[];last=null;render()}
+function nlu(u){const ws=T(u),lw=ws.map(w=>w.toLowerCase());
+ const cnt=I.map(i=>S.kw[i].filter(k=>lw.some(w=>w==k||w.startsWith(k))).length),mx=Math.max(...cnt),pr=sm(cnt.map(c=>c*2.5)),intent=mx>0?I[cnt.indexOf(mx)]:'fallback';
+ const sl={from:null,to:null,time:null};
+ lw.forEach((w,i)=>{const pl=S.places.find(p=>w.startsWith(p));if(!pl)return;
+  if(S.mode=='prep'){const pv=lw[i-1]||'';if(S.fromP.includes(pv))sl.from=pl;else if(S.toP.includes(pv))sl.to=pl}
+  else{if(S.fromS.some(x=>w.endsWith(x)))sl.from=pl;else if(S.toS.some(x=>w.endsWith(x)))sl.to=pl}
+  if(!sl.from&&!sl.to&&st.ask&&(st.ask=='from'||st.ask=='to'))sl[st.ask]=pl});
+ const m=u.match(/\b(\d{1,2})[:.](\d{2})\b/);if(m)sl.time=m[1]+':'+m[2];else if(lw.some(w=>S.now.includes(w)))sl.time=S.nowl;
+ return{intent,pr,sl,cnt}}
+const fill=(t,o)=>t.replace(/\{(\w+)\}/g,(_,k)=>o[k]);
+function turn(u){const r=nlu(u);last=r;let rep;const had=st.from||st.to||st.time;
+ ['from','to','time'].forEach(k=>{if(r.sl[k])st[k]=r.sl[k]});
+ const miss=['from','to','time'].find(k=>!st[k]);
+ if(r.intent=='cancel'){st={from:null,to:null,time:null,conf:false,ask:null};rep=S.r.cancel}
+ else if(st.conf&&r.intent=='yes'){rep=fill(S.r.done,st);st={from:null,to:null,time:null,conf:false,ask:null}}
+ else if(st.conf&&r.intent=='no'){st={from:null,to:null,time:null,conf:false,ask:null};rep=S.r.again}
+ else if(r.intent=='greet'&&!had)rep=S.r.greet;
+ else if(r.intent=='thanks')rep=S.r.thanks;
+ else if(r.intent=='book'||r.sl.from||r.sl.to||r.sl.time||(had&&st.ask)){if(miss){st.ask=miss;st.conf=false;rep=S.r['ask_'+miss]}else{st.conf=true;st.ask=null;rep=fill(S.r.confirm,st)}}
+ else rep=S.r.fallback;
+ log.push(['u',u,r],['b',rep]);render()}
+function render(){const r=last,sl=st;
+ $('out').innerHTML=`<div class="grid"><div class="card"><b>${S.h1}</b><div style="min-height:150px;margin:8px 0">${log.map(m=>m[0]=='u'?`<p style="text-align:right"><span class="tag" style="border-color:var(--ac)">${esc(m[1])}</span></p>`:`<p><span class="tag" style="border-color:var(--g)">🤖 ${esc(m[1])}</span></p>`).join('')||'<p class="mut">'+S.hint+'</p>'}</div>
+ <input type="text" id="ui" placeholder="${S.ph}" data-in="none"><div class="row">${btn('go',-1,S.send)}${btn('rs',0,S.reset)}</div><div class="row">${S.ex.map((e,i)=>btn('ex',i,esc(e))).join('')}</div></div>
+ <div class="card"><b>${S.h2}</b><p class="mut">${S.intents}:</p>${r?I.map((k,i)=>bar(S.il[k],r.pr[i]*(r.intent==k?1:1),(r.pr[i]*100).toFixed(0)+'%',r.intent==k?'var(--g)':'var(--mut)')).join('')+`<p>${S.det}: <b>${r.intent=='fallback'?S.fb:S.il[r.intent]}</b></p>`:'—'}
+ <p class="mut">${S.slots}:</p><table><tr>${['from','to','time'].map(k=>`<th>${S.sn[k]}</th>`).join('')}</tr><tr>${['from','to','time'].map(k=>`<td class="${sl[k]?'ok':'bad'}">${sl[k]?esc(sl[k]):'—'}</td>`).join('')}</tr></table>
+ <p class="mut">${S.state}: ${sl.conf?S.confirming:sl.ask?S.asking+' «'+S.sn[sl.ask]+'»':S.idle}</p></div></div>`;
+ const t=$('ui');t.onkeydown=e=>{if(e.key=='Enter')ACT.go()}}
+ACT.go=()=>{const t=$('ui');if(t.value.trim()){const v=t.value;turn(v)}};ACT.rs=reset;ACT.ex=v=>turn(S.ex[+v]);ACT.none=()=>{};reset();
+
+</script></main></body></html>

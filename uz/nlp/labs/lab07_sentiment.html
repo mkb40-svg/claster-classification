@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>7-laboratoriya. Matnni tasniflash: Naive Bayes va hissiyot tahlili</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab06_attention.html">← Diqqat mexanizmi va kontekstli embeddinglar</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab08_hmm.html">Ketma-ketliklarni belgilash →</a></nav><h1>7-laboratoriya. Matnni tasniflash: Naive Bayes va hissiyot tahlili</h1><p class="mut">Naive Bayes soʻzlar toʻplamini qaysi sinf (ijobiy yoki salbiy sharh) eng ehtimolli qilishini baholaydi. Har bir soʻzning hissasi bevosita koʻrinadi, shuning uchun bu matnning chiziqli tasniflagichlari qanday ishlashini tushunish uchun yaxshi model.</p>
+<div class="card"><label><span id="al"></span>: <b id="av"></b><input type="range" min="1" max="200" value="100" data-in="al"></label><div class="row" id="ng"></div></div><div id="out"></div>
+<h2>Nima sodir boʻlmoqda</h2><p>Model har bir sinf uchun soʻz ehtimoli P(soʻz | sinf) ni oʻqitish sharhlaridan hisoblaydi va ularni koʻpaytiradi (logarifmlarda qoʻshadi), soʻzlar «sodda» mustaqil deb faraz qilinadi. α yumshatishi sinfda uchramagan soʻz uchun nol ehtimolning oldini oladi. Soʻzning «hissasi» ijobiy va salbiy sinflardagi ehtimollar logarifmlarining ayirmasi.</p><p>Faqat soʻzlarni sanaydigan model inkorni tushunmaydi: «yomon emas» «yomon» va «emas» soʻzlaridan iborat, oʻqitishda «yomon» koʻproq yomon sharhlarda uchraydi. Oddiy chora: «emas» dan oldingi soʻzni NOT_ belgisi bilan belgilash («Inkorni hisobga olish» tugmasi). Shunda «NOT_yomon» alohida belgi boʻladi va model uning yaxshi sharhga xosligini oʻrganishi mumkin.</p><p>Uzbek tilida inkor soʻzdan keyin keladi («yaxshi emas») yoki feʼlga qoʻshiladi («yoqmadi», «tavsiya qilmayman»), shuning uchun inkor qoidalari ingliz yoki rus tillaridan farq qiladi.</p>
+<h2>Tajribalar</h2><ol><li>«ajoyib film, juda yoqdi» ni tanlang va soʻzlar hissasini koʻring.</li><li>«mahsulot yomon emas» ni tanlang va inkorni hisobga olgan va olmagan natijani solishtiring. Nima uchun javob oʻzgaradi?</li><li>α ni 0.01 dan 2 gacha oʻzgartiring. Model qisqa matnlarda ishonchi qanday oʻzgaradi?</li><li>Oʻqitishda boʻlmagan soʻzlar bilan oʻz sharhingizni yozing. Model notanish soʻzlar bilan qanday ishlaydi?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Nima uchun soʻzlar mustaqilligi farazi «sodda» deyiladi va model baribir matnlarda yaxshi ishlaydi?</li><li>NOT_ belgisi nimaga yordam beradi va qaysi holatlarni (kinoya, murakkab inkor) baribir hal qilmaydi?</li><li>Oʻqitishda 95% ijobiy sharh boʻlsa, natijalar qanday oʻzgaradi?</li></ol>
+<nav class="n"><a href="lab06_attention.html">← Diqqat mexanizmi va kontekstli embeddinglar</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab08_hmm.html">Ketma-ketliklarni belgilash →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"tests": ["ajoyib film, juda yoqdi", "mahsulot yomon emas", "mamnun emas, xizmat yomon"], "negs": ["emas"], "dir": "prev", "pos": ["ajoyib film, juda yoqdi", "aktyorlar oʻyini zoʻr", "mazali va tez, tavsiya qilaman", "xizmat ajoyib", "yaxshi mahsulot, mamnunman", "juda chiroyli film", "yetkazib berish tez, hammasi yaxshi", "hammaga tavsiya qilaman, zoʻr film", "yomon emas, film yoqdi", "qimmat emas va mazali"], "neg": ["dahshatli film, juda zerikarli", "xizmat yomon", "mazasiz va sekin", "yetkazib berish dahshatli, tavsiya qilmayman", "yomon mahsulot, mamnun emas", "aktyorlar oʻyini zerikarli", "uzoq kutdik, hammasi yomon", "film yoqmadi, zerikarli", "yaxshi emas, mahsulot yomon"], "al": "Yumshatish α", "nong": "Inkorsiz", "yesng": "Inkorni hisobga olish", "nn": " («emas» dan oldingi soʻzga NOT_ belgisi)", "h1": "Sharhni kiriting", "pos_l": "Ijobiy", "neg_l": "Salbiy", "tokn": "Belgilar", "word": "Soʻz", "contrib": "Hissa (ijobiy tomonga +, salbiy tomonga −)", "none": "Maʼlum soʻzlar yoʻq", "toppos": "Eng «ijobiy» soʻzlar", "topneg": "Eng «salbiy» soʻzlar"};
+
+let alpha=1,neg=false,txt=S.tests[0];
+const T=s=>s.toLowerCase().match(/[\p{L}\p{N}ʻ]+/gu)||[];
+function prep(ws){if(!neg)return ws;const o=[...ws];S.negs.forEach(()=>{});for(let i=0;i<ws.length;i++){if(S.negs.includes(ws[i])){const j=S.dir=='next'?i+1:i-1;if(j>=0&&j<ws.length&&!S.negs.includes(ws[j]))o[j]='NOT_'+ws[j]}}return o}
+function model(){const cn={pos:{},neg:{}},tot={pos:0,neg:0},V=new Set(),nd={pos:S.pos.length,neg:S.neg.length};
+ ['pos','neg'].forEach(c=>S[c].forEach(d=>prep(T(d)).forEach(w=>{cn[c][w]=(cn[c][w]||0)+1;tot[c]++;V.add(w)})));return{cn,tot,V,nd}}
+function render(){const M=model(),V=M.V.size,lp=(c,w)=>Math.log(((M.cn[c][w]||0)+alpha)/(M.tot[c]+alpha*V)),ws=prep(T(txt)).filter(w=>M.V.has(w));
+ const sc={};['pos','neg'].forEach(c=>sc[c]=Math.log(M.nd[c]/(M.nd.pos+M.nd.neg))+ws.reduce((a,w)=>a+lp(c,w),0));const p=sm([sc.pos,sc.neg]);
+ const lr=[...M.V].map(w=>[w,lp('pos',w)-lp('neg',w),(M.cn.pos[w]||0)+(M.cn.neg[w]||0)]).filter(a=>a[2]>=1).sort((a,b)=>b[1]-a[1]);
+ const mx=Math.max(...lr.map(a=>Math.abs(a[1])),1);
+ $('out').innerHTML=`<div class="card"><b>${S.h1}</b><div class="row">${S.tests.map((t,i)=>btn('ts',i,esc(t),t==txt)).join('')}</div><input type="text" id="ti" value="${esc(txt)}" data-in="ti">
+ <div class="grid"><div>${bar(S.pos_l,p[0],(p[0]*100).toFixed(0)+'%','var(--g)')}${bar(S.neg_l,p[1],(p[1]*100).toFixed(0)+'%','var(--r)')}<p class="mut">${S.tokn}: ${prep(T(txt)).map(w=>`<span class="tag" style="border-color:${M.V.has(w)?'var(--ac)':'var(--bd)'}">${esc(w)}</span>`).join('')}</p></div>
+ <div class="tw"><table><tr><th>${S.word}</th><th>${S.contrib}</th></tr>${ws.map(w=>{const d=lp('pos',w)-lp('neg',w);return`<tr><td>${esc(w)}</td><td><span style="display:inline-block;height:11px;width:${Math.abs(d)/mx*90}px;background:${d>0?'var(--g)':'var(--r)'};border-radius:4px"></span> ${d>0?'+':''}${f2(d)}</td></tr>`}).join('')||`<tr><td colspan="2">${S.none}</td></tr>`}</table></div></div></div>
+ <div class="grid"><div class="card"><b>${S.toppos}</b>${lr.slice(0,7).map(a=>bar(esc(a[0]),a[1]/mx,f2(a[1]),'var(--g)')).join('')}</div><div class="card"><b>${S.topneg}</b>${lr.slice(-7).reverse().map(a=>bar(esc(a[0]),-a[1]/mx,f2(a[1]),'var(--r)')).join('')}</div></div>`;
+ $('ng').innerHTML=btn('ng',0,S.nong,!neg)+btn('ng',1,S.yesng,neg)+`<span class="mut">${S.nn}</span>`;$('av').textContent=alpha}
+$('al').textContent=S.al;ACT.al=v=>{alpha=v/100;render()};ACT.ng=v=>{neg=+v==1;render()};ACT.ts=v=>{txt=S.tests[+v];render()};
+ACT.ti=v=>{txt=v;const p=v.length;render();const t=$('ti');t.focus();t.setSelectionRange(p,p)};render();
+
+</script></main></body></html>

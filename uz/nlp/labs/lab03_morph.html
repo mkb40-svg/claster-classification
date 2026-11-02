@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3-laboratoriya. Morfologik tahlil va lemmatizatsiya</title><style>
+:root{--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f4f4f6;--bd:#d8d8de;--ac:#2b7de9;--g:#12915f;--r:#d6336c;--o:#e8841a;--p:#8e44ad;color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececf0;--mut:#9a9aa3;--card:#1f1f23;--bd:#38383f;--ac:#5b9cf5;--g:#3fcf94;--r:#f06595;--o:#f0a04b;--p:#b67ad6}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.5em 0 .4em}h3{font-size:1rem;margin:.6em 0 .2em}
+p{margin:.4em 0}.mut{color:var(--mut);font-size:.92rem}
+nav.n{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}nav.n a{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px;max-width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*{min-width:0}
+canvas{width:100%;display:block;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}button.on{border-color:var(--fg);font-weight:600}
+input[type=text],textarea,select{font:inherit;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=range]{width:100%}label{display:block;font-size:.92rem;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.bar{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:4px 0}.bar .l{flex:0 0 34%;overflow-wrap:anywhere}.bar i{display:block;height:13px;border-radius:5px;min-width:2px;transition:width .25s}
+.tw{overflow-x:auto}table{border-collapse:collapse;font-size:.9rem}td,th{padding:4px 8px;border:1px solid var(--bd);text-align:left;white-space:nowrap}td.c,th.c{text-align:center}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1.5px solid var(--bd);margin:2px;font-size:.9rem}
+.big{font-size:1.4rem}.ok{color:var(--g)}.bad{color:var(--r)}code{background:var(--card);padding:0 4px;border-radius:4px}
+ol{padding-left:1.2em;margin:.3em 0}li{margin:.3em 0}
+</style></head><body><main>
+<nav class="n"><a href="lab02_bpe.html">← Matnni tozalash, normallashtirish va BPE</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab04_ngram.html">N-gramm modellar va yumshatish →</a></nav><h1>3-laboratoriya. Morfologik tahlil va lemmatizatsiya</h1><p class="mut">Kompyuter uchun «uylarimizda» va «uyga» turli qatorlar. Shakllarni bittaga keltirish uchun stemming (qoʻshimchalarni qoidalar boʻyicha kesish) yoki lemmatizatsiya (boshlangʻich shaklni lugʻatdan topish) ishlatiladi. Ularni haqiqiy misollarda solishtiring.</p>
+<div class="card"><b id="cl"></b>: <b id="cvv">100%</b><input type="range" min="0" max="100" value="100" data-in="cv"><div id="tg" style="margin-top:6px"></div></div><div id="out"></div>
+<h2>Nima sodir boʻlmoqda</h2><p><b>Stemmer</b> eng uzun mos qoʻshimchani kesadi. Uzbek tilida qoʻshimchalar ketma-ket qoʻshiladi (ildiz + koʻplik + egalik + kelishik), shuning uchun stemmer qatlamma-qatlam ishlaydi: avval kelishik, keyin egalik, keyin koʻplik. U har qanday soʻz bilan ishlaydi, lekin ikki xil xato qiladi: <b>kam kesish</b> (bir soʻzning shakllari turli asos oladi, masalan «qishloq» va «qishlogʻim»: oxirgi undosh almashadi) va <b>ortiqcha kesish</b> (turli soʻzlar bir asos oladi, masalan «olim» va «ol»).</p><p><b>Lemmatizator</b> lugʻatga tayanadi, shuning uchun tartibsiz shakllarni toʻgʻri hal qiladi, lekin lugʻatdan tashqaridagi soʻzni bilmaydi. «Lugʻat biladi» sirgʻalgichi buni koʻrsatadi. Unli bilan tugaydigan ildizlarda (bola → bolam, bolasi) egalik qoʻshimchalari boshqacha shaklda keladi, shuning uchun oddiy qoidalar bunday soʻzlarda xato qiladi.</p><p>Ramka rangi: yashil (asos toʻgʻri va noyob), toʻq sariq (asos boshqa soʻz asosi bilan mos tushdi), qizil (soʻz shakllari turli asos oldi).</p>
+<h2>Tajribalar</h2><ol><li>«kitoblarimdan» yoki «uylarimizda» soʻzini kiriting va qaysi qoʻshimchalar kesilganini koʻring.</li><li>Jadvaldan qizil va toʻq sariq ramkali soʻzlarni toping. Stemmer nima uchun xato qiladi?</li><li>Qatlamlarni birin-ketin oʻchiring (masalan, koʻplikni). Natija qanday oʻzgaradi?</li><li>«Lugʻat biladi»ni 50% ga tushiring. Lemmatizator aniqligi stemmer bilan solishtirganda qanday oʻzgaradi?</li></ol>
+<h2>Oʻz-oʻzini tekshirish savollari</h2><ol><li>Faqat qoʻshimchalarga tayanadigan stemmer uchun qanday xatolar muqarrar?</li><li>Nima uchun agglyutinativ tillarda stemming qatlamlarga boʻlib bajariladi?</li><li>Qaysi masalalarda (qidiruv, tasniflash, tarjima) lemmatizatsiya muhimroq, qaysilarida stemming yetarli?</li></ol>
+<nav class="n"><a href="lab02_bpe.html">← Matnni tozalash, normallashtirish va BPE</a><a href="../index.html">☰ Barcha laboratoriyalar</a><a href="lab04_ngram.html">N-gramm modellar va yumshatish →</a></nav>
+<script>
+const $=id=>document.getElementById(id);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+function cv(id){const c=$(id),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!=Math.round(w*d)||c.height!=Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+const ACT={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset.v,b)});
+document.addEventListener('input',e=>{const b=e.target.closest('[data-in]');if(b&&ACT[b.dataset.in])ACT[b.dataset.in](b.value,b)});
+const btn=(a,v,t,on)=>`<button data-act="${a}" data-v="${v}" class="${on?'on':''}">${t}</button>`;
+const bar=(l,f,t,c)=>`<div class="bar"><span class="l">${l}</span><i style="width:${Math.max(0,Math.min(1,f))*55}%;background:${c||'var(--ac)'}"></i>${t}</div>`;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const sm=a=>{const m=Math.max(...a),e=a.map(v=>Math.exp(v-m)),s=e.reduce((x,y)=>x+y,0);return e.map(v=>v/s)};
+const f2=v=>(Math.round(v*100)/100).toFixed(2),f3=v=>(Math.round(v*1000)/1000).toFixed(3);
+let _play=null;function loop(fn,ms){stop();_play=setInterval(()=>{if(fn()===false)stop()},ms)}function stop(){if(_play){clearInterval(_play);_play=null}}
+
+const S={"tin": "kitoblarimdan", "layers": [{"n": "kelishik", "s": ["ning", "dagi", "gacha", "ni", "ga", "da", "dan", "ka", "qa"]}, {"n": "egalik", "s": ["imiz", "ingiz", "im", "ing", "i"]}, {"n": "koʻplik", "s": ["lar"]}], "groups": [{"l": "uy", "f": ["uy", "uylar", "uyim", "uyda", "uylarimizda"]}, {"l": "kitob", "f": ["kitob", "kitoblar", "kitobim", "kitobga", "kitoblarimdan"]}, {"l": "maktab", "f": ["maktab", "maktabga", "maktabimiz", "maktablarimizning"]}, {"l": "bola", "f": ["bola", "bolalar", "bolam", "bolasi", "bolalarga"]}, {"l": "qishloq", "f": ["qishloq", "qishloqda", "qishlogʻim", "qishlogʻimizga"]}, {"l": "olim", "f": ["olim", "olimlar", "olimga"]}, {"l": "ol (olmoq)", "f": ["ol", "oling"]}], "cov": "Lugʻat biladigan soʻzlar", "h1": "Oʻz soʻzingizni sinab koʻring", "st": "Stemmer (asos + kesilgan qoʻshimchalar)", "dl": "Lugʻat (lemma)", "nodic": "lugʻatda yoʻq", "h2": "Test soʻzlarini stemming qilish", "lm": "Lemma", "fm": "Shakllar → asos", "leg": "Yashil: toʻgʻri. Toʻq sariq: asos boshqa soʻz asosi bilan mos tushdi (ortiqcha kesish). Qizil: bir soʻzning shakllari turli asos oldi (kam kesish).", "h3": "Natijalar", "und": "Kam kesilgan lemmalar", "of": "dan", "ovr": "Ortiqcha kesish holatlari", "dacc": "Lugʻat tanigan shakllar", "rule": "Stemmer (xatosiz ulush)", "dic": "Lugʻat (qamrov)"};
+
+const LAY=S.layers,on=LAY.map(()=>1);let cov=100,inp=S.tin;
+const dict={};S.groups.forEach(g=>g.f.forEach(f=>dict[f]=g.l));
+const hh=w=>[...w].reduce((a,c)=>(a*31+c.charCodeAt(0))%100,7);
+function stem(w){let r=w,cut=[];LAY.forEach((L,i)=>{if(!on[i])return;const c=[...L.s].sort((a,b)=>b.length-a.length).find(s=>r.endsWith(s)&&r.length-s.length>=2);if(c){r=r.slice(0,-c.length);cut.unshift(c)}});return{r,cut}}
+const known=w=>w in dict&&hh(w)<cov;
+function render(){const byStem={};let under=0,dok=0,n=0;
+ const rows=S.groups.map(g=>{const st=g.f.map(f=>stem(f).r);const u=new Set(st);if(u.size>1)under++;u.forEach(s=>{(byStem[s]=byStem[s]||new Set()).add(g.l)});return{g,st,u}});
+ let over=0;Object.values(byStem).forEach(s=>{if(s.size>1)over++});
+ S.groups.forEach(g=>g.f.forEach(f=>{n++;if(known(f))dok++}));
+ const x=stem(inp.toLowerCase()),dl=known(inp.toLowerCase())?dict[inp.toLowerCase()]:null;
+ $('out').innerHTML=`<div class="card"><b>${S.h1}</b><input type="text" value="${esc(inp)}" data-in="wi" style="margin-top:6px">
+ <p><span class="mut">${S.st}:</span> <span class="big">${esc(x.r)}</span>${x.cut.length?' <span class="mut">+</span> '+x.cut.map(c=>`<span class="tag" style="border-color:var(--o)">${esc(c)}</span>`).join(''):''}</p>
+ <p><span class="mut">${S.dl}:</span> <span class="big">${dl?esc(dl):'—'}</span> ${dl?'':'<span class="mut">'+S.nodic+'</span>'}</p></div>
+ <div class="grid"><div class="card"><b>${S.h2}</b><div class="tw"><table><tr><th>${S.lm}</th><th>${S.fm}</th></tr>${rows.map(r=>`<tr><td>${esc(r.g.l)}</td><td>${r.g.f.map((f,i)=>`<span class="tag" style="border-color:${r.u.size>1?'var(--r)':byStem[r.st[i]].size>1?'var(--o)':'var(--g)'}">${esc(f)} → <b>${esc(r.st[i])}</b></span>`).join('')}</td></tr>`).join('')}</table></div>
+ <p class="mut">${S.leg}</p></div>
+ <div class="card"><b>${S.h3}</b><p>${S.und}: <b class="${under?'bad':'ok'}">${under}</b> ${S.of} ${S.groups.length}</p><p>${S.ovr}: <b class="${over?'bad':'ok'}">${over}</b></p>
+ <p>${S.dacc}: <b>${dok}/${n}</b> (${Math.round(dok/n*100)}%)</p>${bar(S.rule,1-(under+over)/(2*S.groups.length),'')}${bar(S.dic,dok/n,'',"var(--g)")}</div></div>`}
+$('tg').innerHTML=LAY.map((L,i)=>`<label style="display:inline-block;margin-right:14px"><input type="checkbox" checked data-in="ly" data-i="${i}"> ${L.n}</label>`).join('');
+$('cl').textContent=S.cov;
+ACT.wi=v=>{inp=v;const p=v.length;render();const t=document.querySelector('#out input[type=text]');t.focus();t.setSelectionRange(p,p)};
+ACT.ly=(v,b)=>{on[+b.dataset.i]=b.checked?1:0;render()};ACT.cv=v=>{cov=+v;$('cvv').textContent=v+'%';render()};
+render();
+
+</script></main></body></html>
